@@ -1,0 +1,52 @@
+{% extends "student/layout.html" %}
+{% block title %}Lịch sử điểm danh{% endblock %}
+{% block page_title %}✅ Lịch sử điểm danh{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom:1rem">
+  <form method="GET" style="display:flex;gap:1rem;align-items:flex-end">
+    <div class="form-group" style="margin:0;flex:1">
+      <label class="form-label">Lọc theo lớp</label>
+      <select name="class_id" class="form-control" onchange="this.form.submit()">
+        <option value="">Tất cả lớp</option>
+        {% for cls in my_classes %}
+        <option value="{{ cls.id }}" {% if selected_class == cls.id %}selected{% endif %}>{{ cls.course_name }} ({{ cls.class_name }})</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+<div class="card">
+  <div class="card-title">📋 Danh sách điểm danh ({{ records|length }} bản ghi)</div>
+  {% if records %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ngày</th><th>Lớp</th><th>Trạng thái</th><th>Thời gian check-in</th><th>Phương thức</th><th>Độ tin cậy</th></tr></thead>
+      <tbody>
+        {% for att, cls in records %}
+        <tr>
+          <td>{{ att.session_date.strftime('%d/%m/%Y') }}</td>
+          <td><span style="font-weight:600">{{ cls.course_name }}</span><br><span style="font-size:.75rem;color:var(--muted)">{{ cls.class_name }}</span></td>
+          <td>
+            {% if att.status == 'present' %}<span class="badge badge-green">Có mặt</span>
+            {% elif att.status == 'absent' %}<span class="badge badge-red">Vắng</span>
+            {% elif att.status == 'late' %}<span class="badge badge-amber">Trễ</span>
+            {% elif att.status == 'excused' %}<span class="badge badge-blue">Có phép</span>
+            {% else %}<span class="badge badge-gray">Lỗi</span>{% endif %}
+          </td>
+          <td>{{ att.checkin_time.strftime('%H:%M:%S') if att.checkin_time else '—' }}</td>
+          <td>
+            {% if att.method == 'face' %}🤖 AI
+            {% elif att.method == 'manual' %}✏️ Thủ công
+            {% else %}📱 QR{% endif %}
+          </td>
+          <td>{{ '%.1f%%'|format(att.face_score * 100) if att.face_score else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có bản ghi điểm danh nào</div></div>
+  {% endif %}
+</div>
+{% endblock %}

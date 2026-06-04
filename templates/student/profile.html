@@ -1,0 +1,162 @@
+{% extends "student/layout.html" %}
+{% block title %}Hồ sơ cá nhân{% endblock %}
+{% block page_title %}👤 Hồ sơ cá nhân{% endblock %}
+
+{% block extra_style %}
+.avatar-wrap { position:relative; width:100px; height:100px; margin:0 auto 1.25rem; }
+.avatar-img  { width:100px; height:100px; border-radius:50%; object-fit:cover;
+               border:3px solid #dbeafe; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.avatar-placeholder { width:100px; height:100px; border-radius:50%;
+  background:linear-gradient(135deg,#3b82f6,#6366f1);
+  display:grid; place-items:center; font-size:2.5rem; color:#fff;
+  border:3px solid #dbeafe; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.avatar-upload-btn {
+  position:absolute; bottom:2px; right:2px;
+  width:30px; height:30px; border-radius:50%;
+  background:#3b82f6; border:2px solid #fff;
+  display:grid; place-items:center; cursor:pointer;
+  font-size:.85rem; transition:background .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.avatar-upload-btn:hover { background:#1d4ed8; }
+#avatar-file { display:none; }
+.info-row { display:flex; gap:.5rem; align-items:center;
+  padding:.6rem .9rem; background:#f8fafc; border-radius:.4rem;
+  font-size:.85rem; color:#374151; margin-bottom:.4rem; }
+.info-label { color:#6b7280; min-width:90px; font-weight:500; }
+.info-val { font-weight:600; color:#111827; }
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem">
+
+  <!-- Left: Avatar + Info -->
+  <div>
+    <div class="card" style="text-align:center">
+      <div class="avatar-wrap">
+        {% if user.avatar %}
+          <img src="{{ url_for('static', filename='uploads/avatars/' + user.avatar) }}"
+               class="avatar-img" alt="Avatar" id="avatar-preview">
+        {% else %}
+          <div class="avatar-placeholder" id="avatar-preview-placeholder">
+            {{ user.full_name[0].upper() if user.full_name else '?' }}
+          </div>
+          <img src="" class="avatar-img" id="avatar-preview"
+               style="display:none; position:absolute; top:0; left:0;">
+        {% endif %}
+        <label class="avatar-upload-btn" for="avatar-file" title="Đổi ảnh">✏️</label>
+      </div>
+
+      <!-- Hidden upload form -->
+      <form method="POST" action="{{ url_for('student.upload_avatar') }}"
+            enctype="multipart/form-data" id="avatar-form">
+        <input type="file" id="avatar-file" name="avatar"
+               accept=".png,.jpg,.jpeg,.gif,.webp"
+               onchange="previewAndUpload(this)">
+      </form>
+
+      <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:.2rem">
+        {{ user.full_name }}
+      </div>
+      <div style="color:#4b5563;font-size:.85rem;margin-bottom:.75rem">{{ user.email or '—' }}</div>
+      <span class="badge badge-blue" style="font-size:.75rem">Sinh viên</span>
+
+      <div style="margin-top:1.25rem;text-align:left">
+        <div class="info-row">
+          <span class="info-label">MSSV</span>
+          <span class="info-val">{{ user.student_code or '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Điện thoại</span>
+          <span class="info-val">{{ user.phone or '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Tham gia</span>
+          <span class="info-val">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Trạng thái</span>
+          <span class="badge badge-green" style="font-size:.72rem">Đang học</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Edit form -->
+  <div class="card">
+    <div class="card-title">✏️ Cập nhật thông tin</div>
+    <form method="POST" action="{{ url_for('student.profile') }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Họ và tên</label>
+          <input class="form-control" type="text" value="{{ user.full_name }}"
+                 disabled style="opacity:.6;cursor:not-allowed;background:#f3f4f6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">MSSV</label>
+          <input class="form-control" type="text" value="{{ user.student_code or '—' }}"
+                 disabled style="opacity:.6;cursor:not-allowed;background:#f3f4f6">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" type="email" name="email"
+                 value="{{ user.email or '' }}" placeholder="Nhập email mới">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số điện thoại</label>
+          <input class="form-control" type="text" name="phone"
+                 value="{{ user.phone or '' }}" placeholder="Nhập số điện thoại">
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #e5e7eb;margin:1.5rem 0;padding-top:1.5rem">
+        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:.95rem;
+                    margin-bottom:1rem;color:#111827">🔑 Đổi mật khẩu</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu mới</label>
+            <input class="form-control" type="password" name="new_password"
+                   placeholder="Để trống nếu không đổi"
+                   style="letter-spacing:.12em;color:#000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Xác nhận mật khẩu</label>
+            <input class="form-control" type="password" name="confirm_password"
+                   placeholder="Nhập lại mật khẩu mới"
+                   style="letter-spacing:.12em;color:#000">
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_script %}
+function previewAndUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert('File quá lớn! Tối đa 5MB.');
+    input.value = '';
+    return;
+  }
+  // Preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('avatar-preview');
+    const placeholder = document.getElementById('avatar-preview-placeholder');
+    if (preview) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    }
+    if (placeholder) placeholder.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+  // Auto-submit
+  document.getElementById('avatar-form').submit();
+}
+{% endblock %}

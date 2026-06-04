@@ -1,0 +1,67 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Danh sách lớp{% endblock %}
+{% block page_title %}📚 Danh sách lớp{% endblock %}
+{% block content %}
+
+{% set sel_sem = request.args.get('semester', '') %}
+
+<div class="card">
+  <div class="card-title">📋 Tất cả lớp học phần
+    <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center">
+      <form method="GET" style="display:flex;gap:.5rem;align-items:center">
+        <select name="semester" class="form-control" style="padding:.4rem .75rem;font-size:.85rem;min-width:140px" onchange="this.form.submit()">
+          <option value="">Tất cả học kỳ</option>
+          {% set seen = [] %}
+          {% for cls, count in class_data %}
+            {% if cls.semester not in seen %}
+              {% set _ = seen.append(cls.semester) %}
+              <option value="{{ cls.semester }}" {% if sel_sem == cls.semester %}selected{% endif %}>{{ cls.semester }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+        {% if sel_sem %}<a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm">✕ Bỏ lọc</a>{% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% set filtered = [] %}
+  {% for cls, count in class_data %}
+    {% if not sel_sem or cls.semester == sel_sem %}{% set _ = filtered.append((cls,count)) %}{% endif %}
+  {% endfor %}
+  {% if filtered %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Tên lớp</th><th>Môn học</th><th>Mã môn</th><th>Học kỳ</th><th>Sĩ số</th><th>Phòng</th><th>Trạng thái</th><th>Thao tác</th></tr>
+      </thead>
+      <tbody>
+        {% for cls, count in filtered %}
+        <tr>
+          <td><span style="font-weight:600">{{ cls.class_name }}</span></td>
+          <td>{{ cls.course_name }}</td>
+          <td><span style="color:var(--muted)">{{ cls.course_code or '—' }}</span></td>
+          <td><span class="badge badge-purple">{{ cls.semester }}</span></td>
+          <td><strong>{{ count }}</strong><span style="color:var(--muted)">/{{ cls.max_students }}</span></td>
+          <td>{{ cls.room or '—' }}</td>
+          <td>
+            {% if cls.status == 'active' %}<span class="badge badge-green">ĐANG HỌC</span>
+            {% elif cls.status == 'closed' %}<span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.72rem;font-weight:700;padding:.25rem .7rem">HOÀN THÀNH</span>
+            {% else %}<span class="badge badge-red">ĐÃ HỦY</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:.4rem">
+              <a href="{{ url_for('lecturer.class_students', class_id=cls.id) }}" class="btn btn-outline btn-sm">👥</a>
+              <a href="{{ url_for('lecturer.class_grades',   class_id=cls.id) }}" class="btn btn-outline btn-sm">📊</a>
+              <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id) }}" class="btn btn-success btn-sm">✅</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Không tìm thấy lớp nào</div></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Dashboard — Giảng viên{% endblock %}
+{% block page_title %}🏠 Dashboard{% endblock %}
+
+{% block extra_style %}
+/* ── Lịch thời khóa biểu ── */
+.tkb-wrap        { background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; overflow:hidden }
+
+/* Navigation tuần */
+.week-nav        { background:#f0f9e8; border-bottom:1px solid #c6e6a3; padding:.6rem 1rem;
+                   display:flex; align-items:center; justify-content:center; gap:1.25rem; font-size:.875rem }
+.week-nav a      { color:#2d6a4f; text-decoration:none; padding:.25rem .65rem; border-radius:.3rem; transition:background .15s }
+.week-nav a:hover{ background:#c6e6a3 }
+.week-cur        { font-weight:700; color:#1b4332 }
+
+/* Bảng */
+.tkb-table       { width:100%; border-collapse:collapse; table-layout:fixed }
+.tkb-table th,
+.tkb-table td    { border:1px solid #e8ede8; vertical-align:top; padding:0 }
+
+/* Header cột ngày */
+.th-empty        { width:60px; background:#f0f9e8; border:1px solid #c6e6a3 }
+.th-day          { text-align:center; padding:.5rem .25rem; background:#f8faf8 }
+.th-day.today    { background:#eff6ff; color:#1d4ed8 }
+.th-day .dname   { font-size:.72rem; font-weight:700; text-transform:uppercase }
+.th-day .ddate   { font-size:.82rem; font-weight:800; margin-top:.1rem }
+
+/* Cột tiết */
+.td-tiet         { width:60px; text-align:center; background:#fafafa;
+                   padding:.2rem .1rem; border-right:2px solid #e2e8f0; vertical-align:middle }
+.td-tiet .tnum   { font-size:.75rem; font-weight:700; color:#374151; letter-spacing:.03em }
+.td-tiet .t-num  { font-size:.72rem; color:#6b7280; font-weight:500 }
+.td-tiet .ttime  { font-size:.58rem; color:#9ca3af }
+
+/* Ô trống & ô có buổi học */
+.td-empty        { height:50px; background:#fff }
+.td-empty.today  { background:#fafeff }
+.td-sess         { padding:2px; vertical-align:top }
+.td-sess.today   { background:#fafeff }
+
+/* Block buổi học */
+.sess-block      { height:100%; min-height:48px; border-radius:.4rem; padding:.4rem .45rem;
+                   color:#fff; font-size:.7rem; line-height:1.3;
+                   display:flex; flex-direction:column; justify-content:center;
+                   cursor:pointer; transition:opacity .15s; text-align:center }
+.sess-block:hover{ opacity:.88 }
+.sess-block .sname { font-weight:700; font-size:.73rem; margin-bottom:.12rem }
+.sess-block .sroom { font-size:.63rem; opacity:.9 }
+.sess-block .sgrp  { font-size:.6rem; opacity:.75; margin-top:.08rem }
+
+/* Màu block theo loại môn (xoay vòng theo cls.id) */
+.c0{background:#1a3a2a} .c1{background:#1f3d5c} .c2{background:#2d3a1a}
+.c3{background:#3d2a1a} .c4{background:#1a3030} .c5{background:#2a1a3d}
+
+/* Chú thích tiết */
+.time-leg        { display:flex; flex-wrap:wrap; gap:.25rem 1rem; padding:.7rem 1rem;
+                   background:#f8fafc; border-top:1px solid #e2e8f0; font-size:.72rem; color:#4b5563 }
+.time-leg .leg-i { display:flex; gap:.35rem; align-items:center }
+.time-leg .leg-d { width:8px; height:8px; border-radius:2px; flex-shrink:0 }
+{% endblock %}
+
+{% block content %}
+
+{#
+  days_vi: tên thứ từ T2(0) → T7(5).
+  KHÔNG có CN — seed chỉ tạo buổi học T2-T7, weekday 0-5.
+#}
+{% set days_vi = ['Hai', 'Ba', 'Tư', 'Năm', 'Sáu', 'Bảy', 'CN'] %}
+{% set colors  = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5'] %}
+
+{# ════════════════════════════════════════════
+   LỊCH GIẢNG DẠY
+   ════════════════════════════════════════════ #}
+<div class="card" style="margin-bottom:1.5rem">
+
+  {# ── Tiêu đề + bộ lọc học kỳ ── #}
+  <div class="card-title">
+    📅 Lịch giảng dạy
+    <div style="margin-left:auto; display:flex; gap:.5rem; align-items:center">
+
+      <form method="GET" style="display:flex; gap:.5rem; align-items:center">
+        <select name="semester" class="form-control"
+                style="padding:.35rem .65rem; font-size:.82rem; min-width:160px"
+                onchange="this.form.submit()">
+          {% for sem_id, sem_name, year, _ in all_semesters | reverse %}
+            <option value="{{ sem_id }}"
+              {% if request.args.get('semester') == sem_id %}selected{% endif %}>
+              {{ sem_name }} – {{ year }}-{{ year | int + 1 }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <span style="font-size:.82rem; color:#6b7280">
+        Thứ {{ days_vi[today.weekday()] if today.weekday() < 6 else 'CN' }},
+        {{ today.strftime('%d/%m/%Y') }}
+      </span>
+
+    </div>
+  </div>
+
+  <div class="tkb-wrap">
+
+    {# ── Điều hướng tuần ── #}
+    <div class="week-nav">
+      <a href="?week={{ week_offset - 1 }}{% if request.args.get('semester') %}&semester={{ request.args.get('semester') }}{% endif %}">
+        &laquo; Tuần {{ week_num - 1 }}
+      </a>
+      <span class="week-cur">
+        TUẦN THỨ {{ week_num }} · {{ week_start.strftime('%d/%m') }} – {{ week_end.strftime('%d/%m/%Y') }}
+      </span>
+      <a href="?week={{ week_offset + 1 }}{% if request.args.get('semester') %}&semester={{ request.args.get('semester') }}{% endif %}">
+        Tuần {{ week_num + 1 }} &raquo;
+      </a>
+    </div>
+
+    {# ── Bảng thời khóa biểu ── #}
+    <table class="tkb-table">
+
+      {# Header: ô trống + 7 cột T2→CN (CN luôn trống) #}
+      <thead>
+        <tr>
+          <th class="th-empty"></th>
+          {% for i in range(7) %}
+            {% set d = week_start + timedelta(days=i) %}
+            <th class="th-day {% if d == today %}today{% endif %}">
+              <div class="dname">{{ days_vi[i] }}</div>
+              <div class="ddate">{{ d.strftime('%d/%m') }}</div>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      {# Body: 10 tiết × 7 ngày (CN luôn trống) #}
+      <tbody>
+        {% for tiet in range(1, 11) %}
+          <tr>
+
+            {# Nhãn tiết bên trái #}
+            <td class="td-tiet">
+              <div class="tnum">TIẾT</div>
+              <div class="t-num">{{ tiet }}</div>
+              <div class="ttime">{{ tiet_map[tiet][0].strftime('%H:%M') }}</div>
+            </td>
+
+            {# 7 ô ngày T2→CN #}
+            {% for day_idx in range(7) %}
+              {% set d  = week_start + timedelta(days=day_idx) %}
+              {% set ck = (day_idx, tiet) %}
+
+              {% if ck in timetable %}
+                {# Ô có buổi học #}
+                {% set sess, cls, span = timetable[ck] %}
+                <td class="td-sess {% if d == today %}today{% endif %}"
+                    rowspan="{{ span }}" style="height:{{ span * 50 }}px">
+                  <div class="sess-block {{ colors[cls.id % colors | length] }}"
+                       style="height:{{ span * 50 - 4 }}px"
+                       title="{{ cls.course_name }} | {{ sess.start_time.strftime('%H:%M') }}–{{ sess.end_time.strftime('%H:%M') }}">
+                    <div class="sname">{{ cls.course_name }}</div>
+                    <div class="sroom">{{ sess.room or cls.room or 'TBD' }}</div>
+                    <div class="sgrp">{{ cls.class_name }}</div>
+                  </div>
+                </td>
+
+              {% elif ck not in occupied %}
+                {# Ô trống (không bị rowspan che) #}
+                <td class="td-empty {% if d == today %}today{% endif %}"></td>
+              {% endif %}
+
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+
+    {# ── Chú thích tiết học ── #}
+    <div class="time-leg">
+      <span style="font-weight:700; color:#374151; font-size:.75rem; width:100%">⏰ Quy đổi tiết học:</span>
+      {% for tiet, (st, et) in tiet_map.items() %}
+        <div class="leg-i">
+          <div class="leg-d" style="background:{% if tiet <= 5 %}#3b82f6{% else %}#8b5cf6{% endif %}"></div>
+          <span>Tiết {{ tiet }}: {{ st.strftime('%H:%M') }}–{{ et.strftime('%H:%M') }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+{# ════════════════════════════════════════════
+   DANH SÁCH LỚP ĐANG PHỤ TRÁCH
+   ════════════════════════════════════════════ #}
+<div class="card">
+
+  <div class="card-title">
+    📋 Lớp học phần đang phụ trách
+    <a href="{{ url_for('lecturer.class_list') }}"
+       style="margin-left:auto; font-size:.8rem; color:var(--accent); text-decoration:none">
+      Quản lý →
+    </a>
+  </div>
+
+  {% if classes %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tên lớp</th>
+            <th>Môn học</th>
+            <th>Học kỳ</th>
+            <th>Sĩ số</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cls in classes %}
+            <tr>
+              <td><strong>{{ cls.class_name }}</strong></td>
+              <td>{{ cls.course_name }}</td>
+              <td><span class="badge badge-purple">{{ cls.semester }}</span></td>
+              <td>
+                <strong>{{ class_counts.get(cls.id, 0) }}</strong>
+                <span style="color:var(--muted)">/{{ cls.max_students }}</span>
+              </td>
+              <td style="display:flex; gap:.4rem">
+                <a href="{{ url_for('lecturer.class_students', class_id=cls.id) }}" class="btn btn-outline btn-sm">👥</a>
+                <a href="{{ url_for('lecturer.class_grades',   class_id=cls.id) }}" class="btn btn-outline btn-sm">📊</a>
+                <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id) }}" class="btn btn-success btn-sm">✅ Điểm danh</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    <div class="empty">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">Chưa có lớp nào</div>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

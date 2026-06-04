@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập — EduPortal{% endblock %}
+
+{% block extra_style %}
+.login-wrap {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 480px;
+}
+
+/* ── Left panel ── */
+.login-hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+}
+.login-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 60% 50% at 30% 40%, #3b82f618, transparent),
+        radial-gradient(ellipse 40% 60% at 80% 70%, #6366f112, transparent);
+}
+.hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(59,130,246,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,.07) 1px, transparent 1px);
+    background-size: 48px 48px;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: #3b82f615; border: 1px solid #3b82f630;
+    color: #93c5fd; font-size: .75rem; font-weight: 600;
+    padding: .35rem .9rem; border-radius: 99px;
+    letter-spacing: .08em; text-transform: uppercase;
+    margin-bottom: 2rem;
+}
+.hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hero-title {
+    font-family: var(--font-head);
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+}
+.hero-title span {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-desc { color: rgba(255,255,255,0.85); font-size: 1rem; line-height: 1.7; max-width: 440px; }
+.hero-features { margin-top: 3rem; display: flex; flex-direction: column; gap: 1rem; }
+.feature-item {
+    display: flex; align-items: center; gap: .875rem;
+    color: rgba(255,255,255,0.75); font-size: .9rem;
+}
+.feature-icon {
+    width: 36px; height: 36px; border-radius: .5rem;
+    background: #3b82f610; border: 1px solid #3b82f625;
+    display: grid; place-items: center; font-size: 1rem; flex-shrink: 0;
+}
+
+/* ── Right panel ── */
+.login-form-panel {
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+}
+.form-logo {
+    display: flex; align-items: center; gap: .75rem;
+    margin-bottom: 2.5rem;
+}
+.logo-icon {
+    width: 42px; height: 42px; border-radius: .75rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: grid; place-items: center; font-size: 1.2rem;
+}
+.logo-text { font-family: var(--font-head); font-weight: 700; font-size: 1.2rem; color: #ffffff; }
+.logo-text span { color: #93c5fd; }
+
+.form-heading { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; color: #111827; }
+.form-sub     { color: #4b5563; font-size: .9rem; margin-bottom: 2rem; }
+
+.field { margin-bottom: 1.25rem; }
+.field label {
+    display: block; font-size: .8rem; font-weight: 600;
+    color: #374151; text-transform: uppercase; letter-spacing: .06em;
+    margin-bottom: .5rem;
+}
+.input-wrap { position: relative; }
+.input-wrap .icon {
+    position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none; font-size: 1rem;
+}
+.field input[type="text"],
+.field input[type="password"] {
+    width: 100%; padding: .75rem .9rem .75rem 2.6rem;
+    background: #ffffff; border: 1px solid #d1d9e0;
+    border-radius: .5rem; color: #111827;
+    font-family: var(--font-main); font-size: .95rem;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+}
+.field input::placeholder { color: #9ca3af; }
+.field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px #3b82f620;
+}
+
+.toggle-pw {
+    position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #6b7280; cursor: pointer;
+    font-size: 1rem; padding: .2rem;
+    transition: color .2s;
+}
+.toggle-pw:hover { color: var(--text); }
+
+.remember-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; font-size: .875rem;
+}
+.remember-row label { display: flex; align-items: center; gap: .5rem; cursor: pointer; color: #4b5563; }
+.remember-row input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+.btn-login {
+    width: 100%; padding: .875rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: .5rem;
+    color: #fff; font-family: var(--font-head);
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; letter-spacing: .02em;
+    transition: opacity .2s, transform .1s;
+    position: relative; overflow: hidden;
+}
+.btn-login:hover  { opacity: .9; }
+.btn-login:active { transform: scale(.99); }
+.btn-login::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+    transform: translateX(-100%); transition: transform .4s;
+}
+.btn-login:hover::after { transform: translateX(100%); }
+
+.divider { display: flex; align-items: center; gap: .75rem; margin: 1.5rem 0; }
+.divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+.divider span { color: #6b7280; font-size: .8rem; white-space: nowrap; }
+
+.demo-accounts { display: flex; flex-direction: column; gap: .5rem; }
+.demo-btn {
+    padding: .6rem 1rem; border-radius: .4rem;
+    border: 1px solid #d1d9e0;
+    background: #f9fafb; color: #374151;
+    font-family: var(--font-main); font-size: .8rem;
+    cursor: pointer; text-align: left;
+    transition: background .2s, color .2s, border-color .2s;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.demo-btn:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+.demo-tag {
+    font-size: .7rem; font-weight: 600; padding: .2rem .5rem;
+    border-radius: 99px; text-transform: uppercase; letter-spacing: .05em;
+}
+.tag-sv  { background: #15803d; color: #ffffff; }
+.tag-gv  { background: #1d4ed8; color: #ffffff; }
+.tag-adm { background: #6d28d9; color: #ffffff; }
+
+@media (max-width: 900px) {
+    .login-wrap { grid-template-columns: 1fr; }
+    .login-hero  { display: none; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+
+    <!-- Hero Panel -->
+    <div class="login-hero">
+        <div class="hero-grid"></div>
+        <div class="hero-content">
+            <div class="hero-badge"><span></span>Hệ thống quản lý đào tạo</div>
+            <h1 class="hero-title">
+                Quản lý học tập<br><span>thông minh hơn</span>
+            </h1>
+            <p class="hero-desc">
+                Cổng thông tin tập trung cho sinh viên và giảng viên — lịch học, điểm số,
+                điểm danh AI và thông báo theo thời gian thực.
+            </p>
+            <p style="color:#94a3b8;font-size:.8rem;margin-top:.75rem;background:#ffffff10;border:1px solid #ffffff15;padding:.5rem .9rem;border-radius:.4rem;display:inline-block">
+                ⚠️ Điểm hợp lệ từ <strong style="color:#fcd34d">0 đến 10</strong>
+            </p>
+            <div class="hero-features">
+                <div class="feature-item">
+                    <div class="feature-icon">🎓</div>
+                    Xem lịch học và điểm số mọi lúc, mọi nơi
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🤖</div>
+                    Điểm danh tự động bằng nhận diện khuôn mặt AI
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔔</div>
+                    Thông báo tức thì khi có cập nhật từ giảng viên
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    Thống kê chuyên cần và học lực chi tiết
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Panel -->
+    <div class="login-form-panel">
+        <div class="form-logo">
+            <div class="logo-icon">🎓</div>
+            <div class="logo-text">Edu<span>Portal</span></div>
+        </div>
+
+        <h2 class="form-heading">Đăng nhập</h2>
+        <p class="form-sub">Nhập tài khoản được cấp để tiếp tục</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
+            <div class="field">
+                <label for="username">Tài khoản</label>
+                <div class="input-wrap">
+                    <span class="icon">👤</span>
+                    <input type="text" id="username" name="username"
+                           placeholder="Nhập tên đăng nhập"
+                           value="{{ request.form.get('username', '') }}"
+                           autocomplete="username" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Mật khẩu</label>
+                <div class="input-wrap">
+                    <span class="icon">🔑</span>
+                    <input type="password" id="password" name="password"
+                           placeholder="Nhập mật khẩu"
+                           autocomplete="current-password" required
+                           style="letter-spacing: .15em; font-size: 1rem;">
+                    <button type="button" class="toggle-pw" onclick="togglePw()">👁</button>
+                </div>
+            </div>
+
+            <div class="remember-row">
+                <label>
+                    <input type="checkbox" name="remember"> Ghi nhớ đăng nhập
+                </label>
+            </div>
+
+            <button type="submit" class="btn-login">Đăng nhập →</button>
+        </form>
+
+        <!-- Demo accounts -->
+        <div class="divider"><hr><span>Tài khoản demo</span><hr></div>
+        <div class="demo-accounts">
+            <button class="demo-btn" onclick="fillDemo('sv_tranthib','sv123456')">
+                <span>sv_tranthib / sv123456</span>
+                <span class="demo-tag tag-sv">Sinh viên</span>
+            </button>
+            <button class="demo-btn" onclick="fillDemo('gv_nguyenvan','gv123456')">
+                <span>gv_nguyenvan / gv123456</span>
+                <span class="demo-tag tag-gv">Giảng viên</span>
+            </button>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_script %}
+function togglePw() {
+    const inp = document.getElementById('password');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function fillDemo(user, pass) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pass;
+}
+{% endblock %}

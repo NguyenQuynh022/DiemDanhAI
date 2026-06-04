@@ -1,0 +1,189 @@
+{% extends "student/layout.html" %}
+{% block title %}Thời khóa biểu{% endblock %}
+{% block page_title %}📅 Thời khóa biểu{% endblock %}
+{% block extra_style %}
+/* ── Semester bar ── */
+.sem-bar{padding:.75rem 1.25rem;margin-bottom:.75rem;background:#fff;border:1px solid #e2e8f0;border-radius:.6rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.sem-lbl{font-size:.82rem;color:#6b7280;font-weight:600;white-space:nowrap}
+.sem-sel{padding:.35rem .65rem;border:1px solid #d1d9e0;border-radius:.4rem;font-size:.85rem;color:#111827;background:#fff;outline:none;cursor:pointer}
+.sem-cur{font-size:.85rem;font-weight:700;color:#1d4ed8;background:#eff6ff;padding:.35rem .85rem;border-radius:.4rem;border:1px solid #bfdbfe;white-space:nowrap}
+
+/* ── TKB wrapper ── */
+.tkb-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;overflow:hidden}
+.week-nav{background:#f0f9e8;border-bottom:1px solid #c6e6a3;padding:.6rem 1rem;display:flex;align-items:center;justify-content:center;gap:1.5rem;font-size:.875rem}
+.week-nav a{color:#2d6a4f;text-decoration:none;padding:.25rem .65rem;border-radius:.3rem;transition:background .15s}
+.week-nav a:hover{background:#c6e6a3}
+.week-cur{font-weight:700;color:#1b4332}
+
+/* ── Grid layout ──
+   Col 0: tiết label (60px)
+   Col 1-7: days
+*/
+.tkb-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.tkb-table th,
+.tkb-table td{border:1px solid #e8ede8;vertical-align:top;padding:0}
+
+/* Day headers */
+.th-empty{width:60px;background:#f0f9e8;border:1px solid #c6e6a3}
+.th-day{text-align:center;padding:.55rem .3rem;font-size:.72rem;font-weight:700;color:#4b5563;text-transform:uppercase;background:#f8faf8}
+.th-day.tcol{background:#eff6ff;color:#1d4ed8}
+.th-day .dname{font-size:.72rem;font-weight:700;text-transform:uppercase}
+.th-day .ddate{font-size:.85rem;font-weight:800;margin-top:.1rem}
+
+/* Tiết cell left */
+.td-tiet{width:60px;text-align:center;background:#fafafa;padding:.2rem .1rem;border-right:2px solid #e2e8f0;vertical-align:middle}
+.tiet-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:54px}
+.tnum{font-size:.8rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.03em}
+.t-label{font-size:.72rem;color:#6b7280;font-weight:500}
+.ttime{font-size:.6rem;color:#9ca3af}
+
+/* Regular empty cell */
+.td-empty{height:54px;background:#fff}
+.td-empty.tcol{background:#fafeff}
+.td-today-bg{background:#fafeff}
+
+/* Session block cell */
+.td-sess{padding:2px;vertical-align:top}
+.td-sess.tcol{background:#fafeff}
+
+.sess-block{
+    height:100%;min-height:52px;
+    border-radius:.4rem;
+    padding:.45rem .5rem;
+    color:#fff;
+    font-size:.73rem;line-height:1.35;
+    display:flex;flex-direction:column;justify-content:center;
+    cursor:pointer;
+    transition:opacity .15s,transform .1s;
+    text-align:center;
+}
+.sess-block:hover{opacity:.9;transform:scale(1.01)}
+.sname{font-weight:700;font-size:.78rem;margin-bottom:.15rem}
+.sroom{font-size:.67rem;opacity:.9}
+.sgrp {font-size:.65rem;opacity:.75;margin-top:.1rem}
+
+/* Colors matching image */
+.c0{background:#1a3a2a}
+.c1{background:#1f3d5c}
+.c2{background:#2d3a1a}
+.c3{background:#3d2a1a}
+.c4{background:#1a3030}
+.c5{background:#2a1a3d}
+.c6{background:#3d1a2a}
+
+/* Time legend */
+.time-leg{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;padding:.75rem 1rem;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:.73rem;color:#4b5563}
+.leg-i{display:flex;gap:.35rem;align-items:center}
+.leg-d{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+{% endblock %}
+
+{% block content %}
+{% set days_vi = ['HAI','BA','TƯ','NĂM','SÁU','BẢY','CN'] %}
+{% set clrs    = ['c0','c1','c2','c3','c4','c5','c6'] %}
+
+<!-- Semester bar -->
+<div class="sem-bar">
+  <span class="sem-lbl">📚 Học kỳ:</span>
+  <form method="GET" style="display:flex;gap:.5rem;align-items:center">
+    <input type="hidden" name="week" value="{{ week_offset }}">
+    <select name="semester" class="sem-sel" onchange="this.form.submit()">
+      {% for sem_id, sem_name, year, sem_start_d in all_semesters|reverse %}
+      <option value="{{ sem_id }}" {% if selected_semester == sem_id %}selected{% endif %}>
+        {{ sem_name }} – {{ year }}-{{ (year|int+1) }}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+  <span class="sem-cur">🗓 Thứ {{ ['Hai','Ba','Tư','Năm','Sáu','Bảy','CN'][today.weekday()] }} — {{ today.strftime('%d/%m/%Y') }}</span>
+  <a href="?week=0{% if selected_semester %}&semester={{ selected_semester }}{% endif %}"
+     class="btn btn-outline btn-sm" style="margin-left:auto">Tuần hiện tại</a>
+</div>
+
+<div class="tkb-wrap">
+  <!-- Week nav -->
+  <div class="week-nav">
+    <a href="?week={{ week_offset-1 }}{% if selected_semester %}&semester={{ selected_semester }}{% endif %}">
+      &laquo; Tuần {{ week_num-1 }}
+    </a>
+    <span class="week-cur">
+      TUẦN THỨ {{ week_num }} &nbsp;·&nbsp; {{ week_start.strftime('%d/%m') }} – {{ week_end.strftime('%d/%m/%Y') }}
+    </span>
+    <a href="?week={{ week_offset+1 }}{% if selected_semester %}&semester={{ selected_semester }}{% endif %}">
+      Tuần {{ week_num+1 }} &raquo;
+    </a>
+  </div>
+
+  <!-- Table -->
+  <table class="tkb-table">
+    <thead>
+      <tr>
+        <th class="th-empty"></th>
+        {% for i in range(7) %}
+        {% set d = week_start + timedelta(days=i) %}
+        <th class="th-day {% if d==today %}tcol{% endif %}">
+          <div class="dname">{{ days_vi[i] }}</div>
+          <div class="ddate">{{ d.strftime('%d/%m') }}</div>
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for tiet in range(1, 11) %}
+      {% set tinfo = tiet_map[tiet] %}
+      <tr>
+        <!-- Tiết label -->
+        <td class="td-tiet">
+          <div class="tiet-wrap">
+            <div class="tnum">TIẾT</div>
+            <div class="t-label">{{ tiet }}</div>
+            <div class="ttime">{{ tinfo[0].strftime('%H:%M') }}</div>
+          </div>
+        </td>
+
+        {% for day_idx in range(7) %}
+        {% set d  = week_start + timedelta(days=day_idx) %}
+        {% set ck = (day_idx, tiet) %}
+
+        {% if ck in timetable %}
+          {% set sess = timetable[ck][0] %}
+          {% set cls  = timetable[ck][1] %}
+          {% set span = timetable[ck][2] %}
+          <td class="td-sess {% if d==today %}tcol{% endif %}"
+              rowspan="{{ span }}"
+              style="height:{{ span*54 }}px">
+            <div class="sess-block {{ clrs[(cls.id) % clrs|length] }}"
+                 style="height:{{ span*54 - 4 }}px"
+                 title="{{ cls.course_name }} | {{ sess.start_time.strftime('%H:%M') }}-{{ sess.end_time.strftime('%H:%M') }} | {{ sess.room or cls.room or '' }}">
+              <div class="sname">{{ cls.course_name }}</div>
+              <div class="sroom">{{ sess.room or cls.room or 'TBD' }}</div>
+              <div class="sgrp">{{ cls.class_name }}</div>
+            </div>
+          </td>
+        {% elif (day_idx, tiet) not in occupied %}
+          <td class="td-empty {% if d==today %}tcol{% endif %}"></td>
+        {% endif %}
+
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Time legend -->
+  <div class="time-leg">
+    <span style="font-weight:700;color:#374151;font-size:.75rem;width:100%">⏰ Quy đổi tiết học:</span>
+    {% for tiet,(st,et) in tiet_map.items() %}
+    <div class="leg-i">
+      <div class="leg-d" style="background:{% if tiet<=5 %}#3b82f6{% else %}#8b5cf6{% endif %}"></div>
+      <span>Tiết {{ tiet }}: {{ st.strftime('%H:%M') }}–{{ et.strftime('%H:%M') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if timetable|length == 0 %}
+<div style="margin-top:1rem;padding:1.25rem;background:#f0f9e8;border:1px solid #c6e6a3;border-radius:.6rem;text-align:center;color:#2d6a4f;font-size:.9rem">
+  📭 Không có lịch học tuần này — chọn tuần khác hoặc đổi học kỳ.
+</div>
+{% endif %}
+{% endblock %}

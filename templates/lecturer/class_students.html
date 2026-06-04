@@ -1,0 +1,63 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Sinh viên — {{ cls.class_name }}{% endblock %}
+{% block page_title %}👥 {{ cls.class_name }} — {{ cls.course_name }}{% endblock %}
+{% block content %}
+<!-- Info bar -->
+<div class="card" style="margin-bottom:1rem;padding:1rem 1.5rem">
+  <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
+    <div><span style="color:var(--muted);font-size:.8rem">Học kỳ</span><br><span class="badge badge-purple" style="margin-top:.25rem">{{ cls.semester }}</span></div>
+    <div><span style="color:var(--muted);font-size:.8rem">Phòng học</span><br><strong>{{ cls.room or '—' }}</strong></div>
+    <div><span style="color:var(--muted);font-size:.8rem">Sĩ số</span><br><strong>{{ enrollments|length }}/{{ cls.max_students }}</strong></div>
+    <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm" style="margin-left:auto">← Danh sách lớp</a>
+  </div>
+</div>
+
+<!-- Add student form -->
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-title">➕ Thêm sinh viên vào lớp</div>
+  <form method="POST" action="{{ url_for('lecturer.add_student', class_id=cls.id) }}" style="display:flex;gap:1rem;align-items:flex-end">
+    <div class="form-group" style="margin:0;flex:1">
+      <label class="form-label">MSSV hoặc tên đăng nhập</label>
+      <input type="text" name="identifier" class="form-control" placeholder="Nhập MSSV hoặc username sinh viên" required>
+    </div>
+    <button type="submit" class="btn btn-primary">➕ Thêm</button>
+  </form>
+</div>
+
+<!-- Student list -->
+<div class="card">
+  <div class="card-title">📋 Danh sách sinh viên ({{ enrollments|length }})</div>
+  {% if enrollments %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Họ và tên</th><th>MSSV</th><th>Email</th><th>Ngày thêm</th><th>Thao tác</th></tr></thead>
+      <tbody>
+        {% for enroll, student in enrollments %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:.85rem;flex-shrink:0">
+                {{ student.full_name[0] }}
+              </div>
+              <span style="font-weight:600">{{ student.full_name }}</span>
+            </div>
+          </td>
+          <td><span class="badge badge-gray">{{ student.student_code or '—' }}</span></td>
+          <td><span style="color:var(--muted)">{{ student.email or '—' }}</span></td>
+          <td>{{ enroll.created_at.strftime('%d/%m/%Y') if enroll.created_at else '—' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('lecturer.remove_student', class_id=cls.id, student_id=student.id) }}"
+                  onsubmit="return confirm('Xóa {{ student.full_name }} khỏi lớp?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑 Xóa</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Chưa có sinh viên nào trong lớp</div></div>
+  {% endif %}
+</div>
+{% endblock %}

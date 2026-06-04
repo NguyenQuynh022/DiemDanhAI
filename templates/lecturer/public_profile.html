@@ -1,0 +1,82 @@
+{% extends "student/layout.html" %}
+{% block title %}Giảng viên — {{ lect.full_name }}{% endblock %}
+{% block page_title %}👨‍🏫 Thông tin giảng viên{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:280px 1fr;gap:1.5rem">
+
+  <!-- Left -->
+  <div class="card" style="text-align:center;height:fit-content">
+    <div style="width:90px;height:90px;border-radius:50%;
+                background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                display:grid;place-items:center;font-size:2.2rem;color:#fff;
+                font-weight:700;margin:0 auto 1rem;border:3px solid #ede9fe">
+      {{ lect.full_name[0].upper() }}
+    </div>
+    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.25rem">
+      {{ lect.full_name }}
+    </div>
+    <div style="color:#4b5563;font-size:.85rem;margin-bottom:.75rem">{{ lect.email or '—' }}</div>
+    <span class="badge badge-blue">Giảng viên</span>
+
+    <div style="margin-top:1.25rem;text-align:left">
+      {% if lect.phone %}
+      <div style="display:flex;gap:.5rem;padding:.55rem .9rem;background:#f8fafc;border-radius:.4rem;margin-bottom:.4rem;font-size:.85rem">
+        <span style="color:#6b7280;min-width:90px">📞 Điện thoại</span>
+        <span style="font-weight:600">{{ lect.phone }}</span>
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:.5rem;padding:.55rem .9rem;background:#f8fafc;border-radius:.4rem;margin-bottom:.4rem;font-size:.85rem">
+        <span style="color:#6b7280;min-width:90px">📚 Số lớp</span>
+        <span style="font-weight:600">{{ classes|length }} lớp đang dạy</span>
+      </div>
+    </div>
+
+    {% if lect.bio %}
+    <div style="margin-top:1rem;padding:.75rem;background:#f1f5f9;border-radius:.5rem;
+                font-size:.82rem;color:#374151;text-align:left;line-height:1.6">
+      {{ lect.bio }}
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline btn-sm" style="margin-top:1.25rem">
+      ← Quay lại
+    </a>
+  </div>
+
+  <!-- Right: classes -->
+  <div class="card">
+    <div class="card-title">📚 Các lớp học phần đang phụ trách</div>
+    {% if classes %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Môn học</th>
+            <th>Mã lớp</th>
+            <th>Học kỳ</th>
+            <th>Phòng</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cls in classes %}
+          <tr>
+            <td><span style="font-weight:600">{{ cls.course_name }}</span>
+                <br><span style="font-size:.75rem;color:#6b7280">{{ cls.course_code or '' }}</span></td>
+            <td>{{ cls.class_name }}</td>
+            <td><span class="badge badge-blue">{{ cls.semester }}</span></td>
+            <td>{{ cls.room or '—' }}</td>
+            <td><span class="badge badge-green">Đang học</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có lớp nào</div></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

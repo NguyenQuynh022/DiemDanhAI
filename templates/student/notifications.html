@@ -1,0 +1,54 @@
+{% extends "student/layout.html" %}
+{% block title %}Thông báo{% endblock %}
+{% block page_title %}🔔 Thông báo{% endblock %}
+{% block extra_style %}
+.notif-item{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.notif-item:hover{background:#ffffff04}
+.notif-item.unread{background:#3b82f608;border-left:3px solid var(--accent)}
+.notif-item.read{border-left:3px solid transparent}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:.35rem}
+.notif-dot.read{background:transparent}
+.notif-title{font-weight:600;font-size:.9rem;margin-bottom:.25rem}
+.notif-content{font-size:.82rem;color:var(--muted)}
+.notif-time{font-size:.75rem;color:var(--muted);margin-top:.35rem}
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-title">🔔 Tất cả thông báo
+    <button onclick="markAll()" class="btn btn-outline btn-sm" style="margin-left:auto">Đọc tất cả</button>
+  </div>
+  {% if notifs.items %}
+    {% for n in notifs.items %}
+    <div class="notif-item {% if not n.is_read %}unread{% else %}read{% endif %}" id="notif-{{n.id}}" onclick="markRead({{n.id}})">
+      <div class="notif-dot {% if n.is_read %}read{% endif %}" id="dot-{{n.id}}"></div>
+      <div style="flex:1">
+        <div class="notif-title">{{ n.title }}</div>
+        {% if n.content %}<div class="notif-content">{{ n.content }}</div>{% endif %}
+        <div class="notif-time">{{ n.created_at.strftime('%H:%M — %d/%m/%Y') }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    <!-- Pagination -->
+    <div style="display:flex;gap:.5rem;justify-content:center;padding:1rem 0">
+      {% if notifs.has_prev %}<a href="?page={{notifs.prev_num}}" class="btn btn-outline btn-sm">← Trước</a>{% endif %}
+      <span style="color:var(--muted);font-size:.85rem;align-self:center">Trang {{ notifs.page }}/{{ notifs.pages }}</span>
+      {% if notifs.has_next %}<a href="?page={{notifs.next_num}}" class="btn btn-outline btn-sm">Sau →</a>{% endif %}
+    </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">🔕</div><div class="empty-text">Không có thông báo nào</div></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_script %}
+function markRead(id){
+  const el = document.getElementById('notif-'+id);
+  if(!el.classList.contains('unread')) return;
+  fetch('/student/notifications/read/'+id,{method:'POST'}).then(()=>{
+    el.classList.remove('unread'); el.classList.add('read');
+    document.getElementById('dot-'+id).classList.add('read');
+  });
+}
+function markAll(){
+  fetch('/student/notifications/read-all',{method:'POST'}).then(()=>location.reload());
+}
+{% endblock %}

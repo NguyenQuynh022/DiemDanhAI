@@ -1,0 +1,71 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Lịch sử thay đổi{% endblock %}
+{% block page_title %}📜 Lịch sử thay đổi{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">📋 Lịch sử thao tác gần đây (100 bản ghi gần nhất)</div>
+    {% if logs %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Hành động</th>
+                    <th>Đối tượng</th>
+                    <th>Giá trị cũ</th>
+                    <th>Giá trị mới</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for log in logs %}
+            <tr>
+                <td style="white-space:nowrap;color:var(--muted);font-size:.8rem">
+                    {{ log.created_at.strftime('%H:%M %d/%m/%Y') }}
+                </td>
+                <td>
+                    {% if log.action_type == 'grade_update' %}
+                        <span class="badge badge-blue">✏️ Cập nhật điểm</span>
+                    {% elif log.action_type == 'grade_delete' %}
+                        <span class="badge badge-red">🗑 Xóa điểm</span>
+                    {% else %}
+                        <span class="badge badge-gray">{{ log.action_type }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span style="color:var(--muted);font-size:.8rem">{{ log.target_type }} #{{ log.target_id }}</span>
+                </td>
+                <td>
+                    {% if log.old_value %}
+                        <div style="font-size:.78rem;color:var(--muted)">
+                            {% if log.old_value.assignment is defined %}
+                            CC:{{ log.old_value.attendance or '—' }}
+                            BT:{{ log.old_value.assignment }} 
+                            GK:{{ log.old_value.midterm }} 
+                            CK:{{ log.old_value.final }} → <strong>{{ log.old_value.total }}</strong>
+                            {% else %}{{ log.old_value }}{% endif %}
+                        </div>
+                    {% else %}<span style="color:var(--border)">—</span>{% endif %}
+                </td>
+                <td>
+                    {% if log.new_value %}
+                        <div style="font-size:.78rem">
+                            {% if log.new_value.assignment is defined %}
+                            CC:{{ log.new_value.attendance or '—' }}
+                            BT:{{ log.new_value.assignment }} 
+                            GK:{{ log.new_value.midterm }} 
+                            CK:{{ log.new_value.final }} → <strong style="color:#15803d">{{ log.new_value.total }}</strong>
+                            {% else %}{{ log.new_value }}{% endif %}
+                        </div>
+                    {% else %}<span style="color:var(--border)">—</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có lịch sử thao tác nào</div></div>
+    {% endif %}
+</div>
+{% endblock %}

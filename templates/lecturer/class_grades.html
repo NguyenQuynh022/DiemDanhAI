@@ -1,0 +1,224 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Quản lý điểm — {{ cls.class_name }}{% endblock %}
+{% block page_title %}📊 Điểm số — {{ cls.class_name }} ({{ cls.course_name }}){% endblock %}
+{% block extra_style %}
+.grade-input{width:68px;padding:.35rem .4rem;background:#f9fafb;border:1px solid #d1d9e0;border-radius:.35rem;color:#111827;font-size:.875rem;text-align:center;outline:none;transition:border-color .2s}
+.grade-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #6366f115}
+.total-badge{font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;min-width:48px;text-align:center;display:inline-block}
+.save-btn{padding:.35rem .8rem;border-radius:.4rem;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.save-btn:hover{opacity:.85}.save-btn.saving{opacity:.5;pointer-events:none}
+.saved-ok{color:#15803d;font-size:.78rem;font-weight:600}.save-err{color:#b91c1c;font-size:.78rem;font-weight:600}
+.formula-panel{background:#eef2ff;border:1px solid #c7d2fe;border-radius:.6rem;padding:1rem 1.25rem;margin-bottom:1rem}
+.formula-title{font-weight:700;color:#3730a3;font-size:.9rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.formula-grid{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap}
+.formula-field{display:flex;flex-direction:column;gap:.25rem}
+.formula-field label{font-size:.72rem;font-weight:700;color:#4338ca;text-transform:uppercase;letter-spacing:.05em}
+.formula-input{width:72px;padding:.4rem .5rem;background:#fff;border:1px solid #a5b4fc;border-radius:.35rem;color:#111827;font-size:.9rem;text-align:center;outline:none}
+.formula-input:focus{border-color:#4f46e5;box-shadow:0 0 0 2px #6366f120}
+.f-total{font-weight:700;font-size:.9rem;padding:.4rem .75rem;border-radius:.35rem}
+.f-ok{background:#dcfce7;color:#15803d}.f-err{background:#fee2e2;color:#b91c1c}
+.formula-save-btn{padding:.4rem 1rem;border-radius:.4rem;background:#4f46e5;color:#fff;border:none;font-size:.82rem;font-weight:600;cursor:pointer}
+.formula-save-btn:hover{background:#3730a3}
+{% endblock %}
+{% block content %}
+<!-- Info bar -->
+<div class="card" style="margin-bottom:1rem;padding:1rem 1.5rem">
+  <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
+    <div><span style="color:var(--muted);font-size:.8rem">Học kỳ</span><br>
+      <span class="badge badge-purple" style="margin-top:.25rem">{{ cls.semester }}</span></div>
+    <div><span style="color:var(--muted);font-size:.8rem">Phòng</span><br><strong>{{ cls.room or '—' }}</strong></div>
+    <div><span style="color:var(--muted);font-size:.8rem">Sĩ số</span><br><strong>{{ enrollments|length }}</strong></div>
+    <div style="margin-left:auto;display:flex;gap:.5rem">
+      <a href="{{ url_for('lecturer.class_students', class_id=cls.id) }}" class="btn btn-outline btn-sm">👥 Sinh viên</a>
+      <a href="{{ url_for('lecturer.audit_logs') }}" class="btn btn-outline btn-sm">📜 Lịch sử</a>
+      <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm">← Danh sách lớp</a>
+    </div>
+  </div>
+</div>
+<!-- Formula -->
+{% set f = cls.formula_config or {'attendance':0.10,'assignment':0.10,'midterm':0.30,'final':0.50} %}
+<div class="formula-panel">
+  <div class="formula-title">⚙️ Công thức tính điểm — tùy chỉnh theo từng môn (tổng = 100%)</div>
+  <div class="formula-grid">
+    <div class="formula-field">
+      <label>Chuyên cần</label>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <input class="formula-input" type="number" id="w_att" min="0" max="100" step="5"
+               value="{{ (f.attendance*100)|int }}" oninput="updateTotal()">
+        <span style="color:#4338ca;font-size:.85rem">%</span>
+      </div>
+    </div>
+    <div class="formula-field">
+      <label>Bài tập</label>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <input class="formula-input" type="number" id="w_asg" min="0" max="100" step="5"
+               value="{{ (f.assignment*100)|int }}" oninput="updateTotal()">
+        <span style="color:#4338ca;font-size:.85rem">%</span>
+      </div>
+    </div>
+    <div class="formula-field">
+      <label>Giữa kỳ</label>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <input class="formula-input" type="number" id="w_mid" min="0" max="100" step="5"
+               value="{{ (f.midterm*100)|int }}" oninput="updateTotal()">
+        <span style="color:#4338ca;font-size:.85rem">%</span>
+      </div>
+    </div>
+    <div class="formula-field">
+      <label>Cuối kỳ</label>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <input class="formula-input" type="number" id="w_fin" min="0" max="100" step="5"
+               value="{{ (f.final*100)|int }}" oninput="updateTotal()">
+        <span style="color:#4338ca;font-size:.85rem">%</span>
+      </div>
+    </div>
+    <div class="formula-field">
+      <label>Tổng</label>
+      <span class="f-total f-ok" id="formula-total">100%</span>
+    </div>
+    <div class="formula-field" style="justify-content:flex-end">
+      <button class="formula-save-btn" onclick="saveFormula({{ cls.id }})">💾 Lưu công thức</button>
+    </div>
+    <span id="formula-msg" style="align-self:flex-end;font-size:.8rem;font-weight:600"></span>
+  </div>
+</div>
+<!-- Table -->
+<div class="card">
+  <div class="card-title">📋 Bảng điểm ({{ enrollments|length }} sinh viên)</div>
+  {% if enrollments %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sinh viên</th><th>MSSV</th>
+          <th style="text-align:center">Chuyên cần<br><span style="font-weight:400;color:#6b7280;font-size:.7rem">({{ (f.attendance*100)|int }}%)</span></th>
+          <th style="text-align:center">Bài tập<br><span style="font-weight:400;color:#6b7280;font-size:.7rem">({{ (f.assignment*100)|int }}%)</span></th>
+          <th style="text-align:center">Giữa kỳ<br><span style="font-weight:400;color:#6b7280;font-size:.7rem">({{ (f.midterm*100)|int }}%)</span></th>
+          <th style="text-align:center">Cuối kỳ ✱<br><span style="font-weight:400;color:#6b7280;font-size:.7rem">({{ (f.final*100)|int }}%)</span></th>
+          <th style="text-align:center">Tổng kết</th>
+          <th style="text-align:center">Xếp loại</th>
+          <th style="text-align:center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for enroll, student in enrollments %}
+      {% set g = grades_map.get(student.id) %}
+      <tr id="row-{{ student.id }}">
+        <td>
+          <div style="display:flex;align-items:center;gap:.65rem">
+            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:.8rem;color:#fff;flex-shrink:0">{{ student.full_name[0] }}</div>
+            <span style="font-weight:600">{{ student.full_name }}</span>
+          </div>
+        </td>
+        <td><span class="badge badge-gray">{{ student.student_code or '—' }}</span></td>
+        <td style="text-align:center">
+          <input class="grade-input" type="number" min="0" max="10" step="0.1" id="att-{{ student.id }}"
+                 value="{{ '%.1f'|format(g.attendance_score|float) if g and g.attendance_score is not none else '' }}" placeholder="0-10">
+        </td>
+        <td style="text-align:center">
+          <input class="grade-input" type="number" min="0" max="10" step="0.1" id="asg-{{ student.id }}"
+                 value="{{ '%.1f'|format(g.assignment|float) if g and g.assignment is not none else '' }}" placeholder="0-10">
+        </td>
+        <td style="text-align:center">
+          <input class="grade-input" type="number" min="0" max="10" step="0.1" id="mid-{{ student.id }}"
+                 value="{{ '%.1f'|format(g.midterm|float) if g and g.midterm is not none else '' }}" placeholder="0-10">
+        </td>
+        <td style="text-align:center">
+          <input class="grade-input" type="number" min="0" max="10" step="0.1" id="fin-{{ student.id }}"
+                 value="{{ '%.1f'|format(g.final|float) if g and g.final is not none else '' }}" placeholder="0-10">
+        </td>
+        <td style="text-align:center">
+          <span class="total-badge" id="total-{{ student.id }}" style="color:{% if g and g.total %}{% if g.total >= 7 %}#15803d{% elif g.total >= 5 %}#b45309{% else %}#b91c1c{% endif %}{% else %}#9ca3af{% endif %}">
+            {{ '%.2f'|format(g.total|float) if g and g.total else '—' }}
+          </span>
+        </td>
+        <td style="text-align:center">
+          <span id="letter-{{ student.id }}">
+          {% if g and g.grade_letter %}
+            <span class="badge {% if g.total >= 7 %}badge-green{% elif g.total >= 5 %}badge-amber{% else %}badge-red{% endif %}">{{ g.grade_letter }}</span>
+          {% else %}—{% endif %}
+          </span>
+        </td>
+        <td style="text-align:center">
+          <div style="display:flex;gap:.4rem;justify-content:center;align-items:center">
+            <button class="save-btn" onclick="saveGrade({{ student.id }}, {{ cls.id }})">💾 Lưu</button>
+            <span id="msg-{{ student.id }}" style="min-width:55px"></span>
+            {% if g %}
+            <form method="POST" action="{{ url_for('lecturer.delete_grade', class_id=cls.id, student_id=student.id) }}"
+                  onsubmit="return confirm('Xóa điểm của {{ student.full_name }}?')">
+              <button type="submit" class="btn btn-danger btn-sm" title="Xóa">🗑</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:.75rem 1rem;font-size:.78rem;color:#6b7280">✱ Cuối kỳ là bắt buộc để tính tổng kết · Điểm hợp lệ: 0 – 10</div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Chưa có sinh viên nào</div></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_script %}
+function updateTotal(){
+  const v=['w_att','w_asg','w_mid','w_fin'].map(id=>parseFloat(document.getElementById(id).value)||0);
+  const s=v.reduce((a,b)=>a+b,0);
+  const el=document.getElementById('formula-total');
+  el.textContent=s+'%';
+  el.className='f-total '+(Math.abs(s-100)<0.5?'f-ok':'f-err');
+}
+updateTotal();
+async function saveFormula(cid){
+  const msg=document.getElementById('formula-msg');
+  const fd=new FormData();
+  fd.append('w_attendance',parseFloat(document.getElementById('w_att').value)/100);
+  fd.append('w_assignment', parseFloat(document.getElementById('w_asg').value)/100);
+  fd.append('w_midterm',    parseFloat(document.getElementById('w_mid').value)/100);
+  fd.append('w_final',      parseFloat(document.getElementById('w_fin').value)/100);
+  try{
+    const r=await fetch(`/lecturer/classes/${cid}/formula`,{method:'POST',body:fd});
+    const d=await r.json();
+    msg.style.color=d.ok?'#15803d':'#b91c1c';
+    msg.textContent=(d.ok?'✓ ':'✗ ')+d.msg;
+    if(d.ok)setTimeout(()=>location.reload(),700);
+  }catch(e){msg.style.color='#b91c1c';msg.textContent='✗ Lỗi kết nối';}
+  setTimeout(()=>msg.textContent='',4000);
+}
+async function saveGrade(sid,cid){
+  const att=document.getElementById('att-'+sid).value;
+  const asg=document.getElementById('asg-'+sid).value;
+  const mid=document.getElementById('mid-'+sid).value;
+  const fin=document.getElementById('fin-'+sid).value;
+  const btn=document.querySelector(`#row-${sid} .save-btn`);
+  const msg=document.getElementById('msg-'+sid);
+  if(fin===''){msg.className='save-err';msg.textContent='⚠ Cần CK';setTimeout(()=>msg.textContent='',2500);return;}
+  const vals=[att,asg,mid,fin].filter(v=>v!=='').map(v=>parseFloat(v));
+  if(vals.some(v=>isNaN(v)||v<0||v>10)){msg.className='save-err';msg.textContent='⚠ 0–10';setTimeout(()=>msg.textContent='',2500);return;}
+  btn.classList.add('saving');btn.textContent='⏳';
+  const fd=new FormData();
+  fd.append('student_id',sid);
+  if(att!=='')fd.append('attendance_score',att);
+  if(asg!=='')fd.append('assignment',asg);
+  if(mid!=='')fd.append('midterm',mid);
+  fd.append('final',fin);
+  try{
+    const r=await fetch(`/lecturer/classes/${cid}/grades/save`,{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){
+      const t=d.total;
+      const tel=document.getElementById('total-'+sid);
+      const lel=document.getElementById('letter-'+sid);
+      tel.textContent=t?t.toFixed(2):'—';
+      tel.style.color=t>=7?'#15803d':t>=5?'#b45309':'#b91c1c';
+      const cc=t>=7?'badge-green':t>=5?'badge-amber':'badge-red';
+      lel.innerHTML=d.grade_letter?`<span class="badge ${cc}">${d.grade_letter}</span>`:'—';
+      msg.className='saved-ok';msg.textContent='✓ Đã lưu';
+    }else{msg.className='save-err';msg.textContent='✗ '+(d.msg||'Lỗi');}
+  }catch(e){msg.className='save-err';msg.textContent='✗ Lỗi';}
+  btn.classList.remove('saving');btn.textContent='💾 Lưu';
+  setTimeout(()=>msg.textContent='',3000);
+}
+{% endblock %}

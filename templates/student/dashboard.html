@@ -1,0 +1,63 @@
+{% extends "student/layout.html" %}
+{% block title %}Dashboard — Sinh viên{% endblock %}
+{% block page_title %}🏠 Dashboard{% endblock %}
+{% block content %}
+
+<div style="margin-top:.5rem">
+  <div class="card">
+    <div class="card-title">📅 Lịch học hôm nay
+      <span style="margin-left:auto;font-size:.8rem;color:var(--muted);font-weight:400">{{ today.strftime('%d/%m/%Y') }}</span>
+    </div>
+    {% if today_sessions %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">
+      {% for sess, cls in today_sessions %}
+      <div style="display:flex;align-items:center;gap:1rem;padding:.875rem 1rem;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:.6rem;border-left:4px solid var(--accent)">
+        <div style="text-align:center;min-width:56px;background:#dbeafe;border-radius:.4rem;padding:.4rem">
+          <div style="font-size:.8rem;font-weight:700;color:#1d4ed8">{{ sess.start_time.strftime('%H:%M') }}</div>
+          <div style="font-size:.7rem;color:#3b82f6">{{ sess.end_time.strftime('%H:%M') }}</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:.9rem;color:#111827">{{ cls.course_name }}</div>
+          <div style="font-size:.78rem;color:#4b5563;margin-top:.2rem">{{ cls.class_name }} · 🏫 {{ sess.room or cls.room or 'TBD' }}</div>
+          <div style="font-size:.75rem;color:#6b7280;margin-top:.15rem">👨‍🏫 {{ cls.lecturer.full_name if cls.lecturer else '—' }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty"><div class="empty-icon">☀️</div><div class="empty-text">Không có lịch học hôm nay</div></div>
+    {% endif %}
+  </div>
+</div>
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-title">📚 Học phần đang học</div>
+  {% if enrolled_classes %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Môn học</th><th>Mã lớp</th><th>Giảng viên</th><th>Phòng</th><th>Học kỳ</th>
+          <th>Trạng thái</th></tr></thead>
+      <tbody>
+        {% for cls in enrolled_classes %}
+        <tr>
+          <td><span style="font-weight:600">{{ cls.course_name }}</span></td>
+          <td><span style="color:var(--muted)">{{ cls.class_name }}</span></td>
+          <td>{{ cls.lecturer.full_name if cls.lecturer else '—' }}</td>
+          <td>{{ cls.room or '—' }}</td>
+          <td><span class="badge badge-blue">{{ cls.semester }}</span></td>
+          <td>
+            {% if cls.status == 'active' %}
+              <span class="badge badge-green" style="font-size:.72rem">ĐANG HỌC</span>
+            {% else %}
+              <span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.72rem;font-weight:700;padding:.25rem .7rem">HOÀN THÀNH</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa đăng ký học phần nào</div></div>
+  {% endif %}
+</div>
+{% endblock %}

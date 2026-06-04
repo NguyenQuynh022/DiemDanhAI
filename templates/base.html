@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduPortal{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #0f1117;
+            --surface:   #181c27;
+            --border:    #252a3a;
+            --accent:    #3b82f6;
+            --accent2:   #6366f1;
+            --success:   #22c55e;
+            --warning:   #f59e0b;
+            --danger:    #ef4444;
+            --text:      #e2e8f0;
+            --muted:     #64748b;
+            --font-main: 'Be Vietnam Pro', sans-serif;
+            --font-head: 'Sora', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Flash messages */
+        .flash-container {
+            position: fixed; top: 1rem; right: 1rem;
+            z-index: 9999; display: flex; flex-direction: column; gap: .5rem;
+            max-width: 360px;
+        }
+        .flash {
+            padding: .75rem 1.25rem;
+            border-radius: .5rem;
+            font-size: .875rem;
+            font-weight: 500;
+            border-left: 4px solid;
+            backdrop-filter: blur(8px);
+            animation: slideIn .3s ease;
+        }
+        .flash.success { background: #14532d88; border-color: var(--success); color: #86efac; }
+        .flash.danger  { background: #7f1d1d88; border-color: var(--danger);  color: #fca5a5; }
+        .flash.warning { background: #78350f88; border-color: var(--warning); color: #fcd34d; }
+        .flash.info    { background: #1e3a5f88; border-color: var(--accent);  color: #93c5fd; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(1rem); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        {% block extra_style %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<script>
+    // Tự ẩn flash sau 4 giây
+    setTimeout(() => {
+        document.querySelectorAll('.flash').forEach(el => {
+            el.style.transition = 'opacity .5s';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        });
+    }, 4000);
+</script>
+{% block extra_script %}{% endblock %}
+</body>
+</html>
