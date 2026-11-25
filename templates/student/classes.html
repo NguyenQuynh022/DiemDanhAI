@@ -1,0 +1,83 @@
+{% extends "student/layout.html" %}
+{% block title %}Lớp học phần — EduPortal{% endblock %}
+
+{% block content %}
+<div class="x-panel">
+  <div class="x-title">
+    <h2>Danh sách Lớp học phần đăng ký kỳ {{ sem_num }}, năm học {{ sem_years }}</h2>
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <form method="GET" style="margin:0">
+        <select name="semester" class="form-control" style="padding:.38rem .75rem;font-size:.82rem;width:auto" onchange="this.form.submit()">
+          {% for sem_id, sem_name, year, _ in all_semesters|reverse %}
+          <option value="{{ sem_id }}" {% if sel_sem == sem_id %}selected{% endif %}>
+            {{ sem_name }} ({{ year }}–{{ year|int + 1 }})
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      <a href="{{ url_for('student.credit_registration') }}" class="btn-teal-action">⊕ Đăng ký tín chỉ</a>
+    </div>
+  </div>
+
+  <div class="section-bar teal">
+    <span>📚 Tổng cộng {{ rows|length }} lớp học phần trong {{ sel_sem }}</span>
+  </div>
+
+  <div class="vku-table-wrap">
+    <table class="vku-table">
+      <thead>
+        <tr>
+          <th style="width:45px">#</th>
+          <th>Mã lớp</th>
+          <th>Tên lớp học phần</th>
+          <th style="width:80px">Tín chỉ</th>
+          <th>Giảng viên</th>
+          <th style="width:105px">Tuần</th>
+          <th style="width:95px">Phòng</th>
+          <th style="width:115px">Thứ / Tiết</th>
+          <th style="width:95px">Chuyên cần</th>
+          <th style="width:95px">Điểm TK</th>
+          <th style="width:135px">Lịch trình</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if rows %}
+          {% for r in rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong style="color:var(--accent-text)">{{ r.cls.class_name }}</strong></td>
+            <td style="font-weight:600;color:var(--text)">{{ r.cls.course_name }}</td>
+            <td><span class="badge badge-blue">{{ r.credits }} TC</span></td>
+            <td>
+              {% if r.cls.lecturer %}
+                <a href="{{ url_for('student.contact_lecturer', lecturer_id=r.cls.lecturer.id) }}" style="color:var(--accent-text);font-weight:500">
+                  {{ r.cls.lecturer.full_name }}
+                </a>
+              {% else %}—{% endif %}
+            </td>
+            <td><strong>{{ r.weeks }}</strong></td>
+            <td><strong>{{ r.cls.room or '—' }}</strong></td>
+            <td><strong>{{ r.thu_tiet }}</strong></td>
+            <td><strong>{{ r.att_str }}</strong></td>
+            <td>
+              {% if r.grade and r.grade.total is not none %}
+                <strong>{{ '%.1f'|format(r.grade.total|float) }} ({{ r.grade.grade_letter }})</strong>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('student.class_timeline', class_id=r.cls.id) }}" class="btn-teal-action">Xem lịch trình</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="11" style="text-align:center;padding:1.5rem;color:var(--muted)">
+              Chưa có lớp học phần nào trong học kỳ {{ sel_sem }}.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

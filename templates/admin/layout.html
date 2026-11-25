@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Quản trị Đào tạo — EduPortal{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+<script src="{{ url_for('static', filename='js/prefs.js') }}"></script>
+<style>
+{% block extra_style %}{% endblock %}
+</style>
+</head>
+<body class="theme-admin">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-wrap">
+  {% for cat, msg in messages %}
+  <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="sidebar-backdrop" onclick="document.body.classList.remove('sidebar-open')"></div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🛡️</div>
+    <div>
+      <div class="logo-text">Edu<span style="color:#fda4af">Portal</span></div>
+      <span class="logo-sub">Admin &amp; Training Office</span>
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="sidebar-ava">
+      {{ current_user.full_name[0].upper() if current_user.full_name else 'A' }}
+    </div>
+    <div style="min-width:0;flex:1">
+      <div class="user-name">{{ current_user.full_name }}</div>
+      <div class="user-role">{{ current_user.email or current_user.username }}</div>
+      <span class="user-badge" style="background:rgba(251,113,133,.2);color:#fecdd3">Quản trị viên</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-label">Tổng quan hệ thống</div>
+    <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+      <span class="nav-icon">📊</span> Bảng điều khiển Admin
+    </a>
+
+    <div class="nav-label">Quản lý &amp; Cấp tài khoản</div>
+    <a href="{{ url_for('admin.users_list') }}" class="nav-item {% if request.endpoint == 'admin.users_list' and not request.args.get('role') %}active{% endif %}">
+      <span class="nav-icon">👥</span> Tất cả tài khoản
+    </a>
+    <a href="{{ url_for('admin.users_list', role='lecturer') }}" class="nav-item {% if request.endpoint == 'admin.users_list' and request.args.get('role') == 'lecturer' %}active{% endif %}">
+      <span class="nav-icon">👨‍🏫</span> Tài khoản Giảng viên
+    </a>
+    <a href="{{ url_for('admin.users_list', role='student') }}" class="nav-item {% if request.endpoint == 'admin.users_list' and request.args.get('role') == 'student' %}active{% endif %}">
+      <span class="nav-icon">🎓</span> Tài khoản Sinh viên
+    </a>
+
+    <div class="nav-label">Đào tạo &amp; Đăng ký tín chỉ</div>
+    <a href="{{ url_for('admin.courses_manage') }}" class="nav-item {% if request.endpoint == 'admin.courses_manage' %}active{% endif %}">
+      <span class="nav-icon">📚</span> Mở lớp &amp; Đăng ký tín chỉ
+    </a>
+    <a href="{{ url_for('admin.face_ai_manage') }}" class="nav-item {% if request.endpoint == 'admin.face_ai_manage' %}active{% endif %}">
+      <span class="nav-icon">🤖</span> Dữ liệu Khuôn mặt &amp; Train AI
+    </a>
+
+    <div class="nav-label">Cổng thông tin đào tạo</div>
+    <a href="{{ url_for('admin.announcements_list') }}" class="nav-item {% if request.endpoint == 'admin.announcements_list' %}active{% endif %}">
+      <span class="nav-icon">📢</span> Đăng &amp; Quản lý thông báo
+    </a>
+    <a href="{{ url_for('auth.portal_home') }}" target="_blank" class="nav-item">
+      <span class="nav-icon">🌐</span> Xem Cổng thông tin (Live)
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('auth.logout') }}" onclick="return confirmLogout(event, this.href)" class="btn-logout">
+      <span>🚪</span> Đăng xuất Quản trị
+    </a>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="menu-toggle" onclick="document.body.classList.toggle('sidebar-open')" aria-label="Menu">☰</button>
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    </div>
+    <div class="topbar-right">
+      <a href="{{ url_for('auth.portal_home') }}" class="btn btn-outline btn-sm">🌐 Trang Cổng thông tin</a>
+      <button type="button" class="btn btn-outline btn-sm" onclick="openSettings()" title="Cài đặt">⚙️ Cài đặt</button>
+      <span class="topbar-pill hide-sm">🗓 <span id="topbar-clock"></span></span>
+    </div>
+  </header>
+
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+function tick() {
+  const now = new Date();
+  const el = document.getElementById('topbar-clock');
+  if (el) {
+    el.textContent = now.toLocaleDateString('vi-VN', {
+      weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  }
+}
+tick();
+setInterval(tick, 60000);
+setTimeout(() => {
+  document.querySelectorAll('.flash').forEach(el => {
+    el.style.transition = 'opacity .4s, transform .4s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    setTimeout(() => el.remove(), 400);
+  });
+}, 4200);
+{% block extra_script %}{% endblock %}
+</script>
+{% include 'partials/settings_panel.html' %}
+</body>
+</html>

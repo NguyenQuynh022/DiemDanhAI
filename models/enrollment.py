@@ -16,4 +16,8 @@ class Enrollment(db.Model):
         db.UniqueConstraint('student_id', 'class_id', name='uq_enrollment'),
     )
 
-    student = db.relationship('User', foreign_keys=[student_id], backref='enrollments')
+    student = db.relationship(
+        'User',
+        foreign_keys=[student_id],
+        backref=db.backref('enrollments', cascade='all, delete-orphan', passive_deletes=True),
+    )

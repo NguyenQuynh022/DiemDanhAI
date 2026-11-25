@@ -43,5 +43,12 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.role == 'admin'
 
+    @property
+    def cohort(self):
+        """Trả về khóa học từ 2 chữ số đầu của MSSV (VD: '23ITB185' -> '23')."""
+        if self.student_code and len(self.student_code) >= 2 and self.student_code[:2].isdigit():
+            return self.student_code[:2]
+        return None
+
     def __repr__(self):
         return f'<User {self.username} [{self.role}]>'

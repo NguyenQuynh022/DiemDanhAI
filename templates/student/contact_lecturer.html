@@ -1,130 +1,137 @@
 {% extends "student/layout.html" %}
-{% block title %}Liên hệ giảng viên{% endblock %}
-{% block page_title %}📞 Liên hệ giảng viên{% endblock %}
+{% block title %}Liên hệ — {{ lect.full_name }}{% endblock %}
+{% block page_title %}📞 Thông tin liên hệ giảng viên{% endblock %}
 
 {% block extra_style %}
-.contact-card {
-    display:flex; gap:2rem; align-items:flex-start;
-    padding:2rem; background:#fff;
-    border:1px solid #e2e8f0; border-radius:.75rem;
-    box-shadow:0 1px 4px rgba(0,0,0,.05);
-    margin-bottom:1.5rem;
+.contact-hero-card {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
 }
-.lect-avatar-wrap { flex-shrink:0; text-align:center; }
 .lect-avatar {
-    width:120px; height:120px; border-radius:50%;
-    object-fit:cover;
-    border:3px solid #dbeafe;
-    box-shadow:0 2px 12px rgba(0,0,0,.12);
+  width: 112px; height: 112px; border-radius: 50%; object-fit: cover;
+  border: 4px solid var(--accent-soft); box-shadow: var(--shadow-md);
 }
 .lect-avatar-placeholder {
-    width:120px; height:120px; border-radius:50%;
-    background:linear-gradient(135deg,#4f46e5,#7c3aed);
-    display:grid; place-items:center;
-    font-size:3rem; color:#fff; font-weight:700;
-    border:3px solid #ede9fe;
-    box-shadow:0 2px 12px rgba(99,102,241,.3);
+  width: 112px; height: 112px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: grid; place-items: center; font-family: var(--head);
+  font-size: 2.6rem; color: #fff; font-weight: 700;
+  border: 4px solid var(--accent-soft); box-shadow: var(--shadow-md);
 }
-.lect-name { font-family:'Sora',sans-serif; font-size:1.4rem; font-weight:700; margin-bottom:.35rem; }
-.lect-role { color:#4b5563; font-size:.9rem; margin-bottom:1rem; }
 .contact-item {
-    display:flex; align-items:center; gap:.75rem;
-    padding:.75rem 1rem; background:#f8fafc;
-    border:1px solid #e2e8f0; border-radius:.5rem;
-    margin-bottom:.5rem; font-size:.9rem;
-    transition:background .15s;
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.75rem 1rem; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 11px;
+  margin-bottom: 0.55rem;
 }
-.contact-item:hover { background:#eff6ff; }
-.contact-icon { font-size:1.2rem; flex-shrink:0; width:28px; text-align:center; }
-.contact-label { font-size:.72rem; color:#6b7280; font-weight:600;
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:.1rem; }
-.contact-val { font-weight:600; color:#111827; }
-.contact-val a { color:#3b82f6; text-decoration:none; }
-.contact-val a:hover { text-decoration:underline; }
-.bio-box {
-    background:#f8fafc; border-left:3px solid #6366f1;
-    border-radius:0 .5rem .5rem 0;
-    padding:.875rem 1rem; margin-top:1rem;
-    font-size:.875rem; color:#374151; line-height:1.65;
+.contact-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: #fff; border: 1px solid var(--border);
+  display: grid; place-items: center; font-size: 1.05rem; flex-shrink: 0;
+}
+.contact-label { font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.contact-val { font-weight: 700; color: var(--text); font-size: 0.9rem; }
+.contact-val a { color: var(--accent-text); text-decoration: none; }
+.contact-val a:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .contact-hero-card { flex-direction: column; align-items: center; text-align: center; }
 }
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('student.dashboard') }}" class="btn btn-outline btn-sm" style="margin-bottom:1rem">
-  ← Quay lại Dashboard
-</a>
+<div style="margin-bottom:1rem">
+  <a href="{{ url_for('student.contact_lecturers_list') }}" class="btn btn-outline btn-sm">← Quay lại danh bạ giảng viên</a>
+</div>
 
-<div class="contact-card">
-  <!-- Avatar -->
-  <div class="lect-avatar-wrap">
+<div class="card contact-hero-card">
+  <div style="text-align:center;flex-shrink:0">
     {% if lect.avatar %}
-      <img src="{{ url_for('static', filename='uploads/avatars/' + lect.avatar) }}"
-           class="lect-avatar" alt="{{ lect.full_name }}">
+      <img src="{{ url_for('static', filename='uploads/avatars/' + lect.avatar) }}" class="lect-avatar" alt="{{ lect.full_name }}">
     {% else %}
       <div class="lect-avatar-placeholder">{{ lect.full_name[0].upper() }}</div>
     {% endif %}
-    <div style="margin-top:.75rem">
-      <span class="badge badge-blue" style="font-size:.75rem">Giảng viên</span>
-    </div>
+    <div style="margin-top:.75rem"><span class="badge badge-blue">Giảng viên</span></div>
   </div>
 
-  <!-- Info -->
-  <div style="flex:1">
-    <div class="lect-name">{{ lect.full_name }}</div>
-    <div class="lect-role">Giảng viên — Khoa Công nghệ Thông tin</div>
+  <div style="flex:1;min-width:0;width:100%">
+    <div style="font-family:var(--head);font-size:1.4rem;font-weight:700;color:var(--text)">{{ lect.full_name }}</div>
+    <div style="color:var(--muted);font-size:.9rem;margin:.2rem 0 1.15rem">Giảng viên — Khoa Công nghệ Thông tin</div>
 
-    {% if lect.phone %}
-    <div class="contact-item">
-      <span class="contact-icon">📞</span>
-      <div>
-        <div class="contact-label">Số điện thoại</div>
-        <div class="contact-val">
-          <a href="tel:{{ lect.phone }}">{{ lect.phone }}</a>
+    <div class="grid-2col">
+      {% if lect.phone %}
+      <div class="contact-item">
+        <span class="contact-icon">📞</span>
+        <div style="text-align:left">
+          <div class="contact-label">Số điện thoại</div>
+          <div class="contact-val"><a href="tel:{{ lect.phone }}">{{ lect.phone }}</a></div>
         </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    {% if lect.email %}
-    <div class="contact-item">
-      <span class="contact-icon">✉️</span>
-      <div>
-        <div class="contact-label">Email</div>
-        <div class="contact-val">
-          <a href="mailto:{{ lect.email }}">{{ lect.email }}</a>
+      {% if lect.email %}
+      <div class="contact-item">
+        <span class="contact-icon">✉️</span>
+        <div style="text-align:left">
+          <div class="contact-label">Email công vụ</div>
+          <div class="contact-val"><a href="mailto:{{ lect.email }}">{{ lect.email }}</a></div>
         </div>
       </div>
+      {% endif %}
     </div>
-    {% endif %}
 
     <div class="contact-item">
       <span class="contact-icon">🏫</span>
-      <div>
-        <div class="contact-label">Giờ tiếp sinh viên</div>
-        <div class="contact-val">Thứ 2 – Thứ 6 &nbsp;·&nbsp; 08:00 – 17:00</div>
+      <div style="text-align:left">
+        <div class="contact-label">Khung giờ tiếp sinh viên</div>
+        <div class="contact-val">Thứ Hai – Thứ Sáu · 08:00 – 17:00</div>
       </div>
     </div>
 
     {% if lect.bio %}
-    <div class="bio-box">💬 {{ lect.bio }}</div>
+    <div style="background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;padding:.85rem 1rem;margin-top:.85rem;font-size:.86rem;color:var(--text-secondary);line-height:1.6;text-align:left">
+      💬 {{ lect.bio }}
+    </div>
     {% endif %}
+
+    <div style="display:flex;gap:.65rem;margin-top:1.25rem;flex-wrap:wrap">
+      {% if lect.email %}
+      <a href="mailto:{{ lect.email }}?subject=Trao đổi học tập - {{ current_user.full_name }} ({{ current_user.student_code or '' }})" class="btn btn-primary">
+        ✉️ Gửi Email trao đổi
+      </a>
+      {% endif %}
+      {% if lect.phone %}
+      <a href="tel:{{ lect.phone }}" class="btn btn-outline">📞 Gọi điện thoại</a>
+      {% endif %}
+      <a href="{{ url_for('lecturer.lecturer_public', lecturer_id=lect.id) }}" class="btn btn-outline">
+        📚 Xem tất cả lớp giảng dạy
+      </a>
+    </div>
   </div>
 </div>
 
-<!-- Các lớp GV đang dạy mình -->
 {% if teaches_me %}
 <div class="card">
-  <div class="card-title">📚 Các môn thầy/cô đang dạy bạn</div>
+  <div class="card-title">📚 Các học phần thầy/cô giảng dạy bạn</div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Môn học</th><th>Mã lớp</th><th>Học kỳ</th><th>Phòng</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Tên học phần</th>
+          <th>Mã lớp</th>
+          <th>Học kỳ</th>
+          <th>Phòng học</th>
+        </tr>
+      </thead>
       <tbody>
         {% for cls in teaches_me %}
         <tr>
-          <td><span style="font-weight:600">{{ cls.course_name }}</span></td>
-          <td>{{ cls.class_name }}</td>
+          <td><strong style="color:var(--text)">{{ cls.course_name }}</strong></td>
+          <td><strong style="color:var(--accent-text)">{{ cls.class_name }}</strong></td>
           <td><span class="badge badge-blue">{{ cls.semester }}</span></td>
-          <td>{{ cls.room or '—' }}</td>
+          <td>🏫 {{ cls.room or '—' }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -132,23 +139,4 @@
   </div>
 </div>
 {% endif %}
-
-<!-- Quick actions -->
-<div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap">
-  {% if lect.email %}
-  <a href="mailto:{{ lect.email }}?subject=Hỏi về môn học - {{ current_user.full_name }}"
-     class="btn btn-primary">
-    ✉️ Gửi Email
-  </a>
-  {% endif %}
-  {% if lect.phone %}
-  <a href="tel:{{ lect.phone }}" class="btn btn-outline">
-    📞 Gọi điện
-  </a>
-  {% endif %}
-  <a href="{{ url_for('lecturer.lecturer_public', lecturer_id=lect.id) }}"
-     class="btn btn-outline">
-    👤 Xem hồ sơ đầy đủ
-  </a>
-</div>
 {% endblock %}

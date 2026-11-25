@@ -15,4 +15,4 @@ if __name__ == '__main__':
     print("  http://localhost:5001")
     print("  Cookie: eduportal_lecturer")
     print("=" * 45)
-    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=True)

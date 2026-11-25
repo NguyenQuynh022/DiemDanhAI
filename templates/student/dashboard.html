@@ -1,63 +1,138 @@
 {% extends "student/layout.html" %}
-{% block title %}Dashboard — Sinh viên{% endblock %}
-{% block page_title %}🏠 Dashboard{% endblock %}
-{% block content %}
+{% block title %}Các lớp học phần — Sinh viên{% endblock %}
 
-<div style="margin-top:.5rem">
-  <div class="card">
-    <div class="card-title">📅 Lịch học hôm nay
-      <span style="margin-left:auto;font-size:.8rem;color:var(--muted);font-weight:400">{{ today.strftime('%d/%m/%Y') }}</span>
+{% block content %}
+<div class="x-panel">
+
+  <!-- Panel Header -->
+  <div class="x-title">
+    <h2>Các lớp học phần {{ sem_num }}, năm học {{ sem_years }}</h2>
+    <div style="display:flex;gap:.5rem">
+      <a href="{{ url_for('attendance.checkin_page') }}" class="btn-teal-action">🤖 Điểm danh AI</a>
+      <a href="{{ url_for('student.schedule', semester=sel_sem) }}" class="btn btn-outline btn-sm">📅 Lịch học theo tuần</a>
     </div>
-    {% if today_sessions %}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">
-      {% for sess, cls in today_sessions %}
-      <div style="display:flex;align-items:center;gap:1rem;padding:.875rem 1rem;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:.6rem;border-left:4px solid var(--accent)">
-        <div style="text-align:center;min-width:56px;background:#dbeafe;border-radius:.4rem;padding:.4rem">
-          <div style="font-size:.8rem;font-weight:700;color:#1d4ed8">{{ sess.start_time.strftime('%H:%M') }}</div>
-          <div style="font-size:.7rem;color:#3b82f6">{{ sess.end_time.strftime('%H:%M') }}</div>
-        </div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:.9rem;color:#111827">{{ cls.course_name }}</div>
-          <div style="font-size:.78rem;color:#4b5563;margin-top:.2rem">{{ cls.class_name }} · 🏫 {{ sess.room or cls.room or 'TBD' }}</div>
-          <div style="font-size:.75rem;color:#6b7280;margin-top:.15rem">👨‍🏫 {{ cls.lecturer.full_name if cls.lecturer else '—' }}</div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-      <div class="empty"><div class="empty-icon">☀️</div><div class="empty-text">Không có lịch học hôm nay</div></div>
-    {% endif %}
   </div>
-</div>
-<div class="card" style="margin-top:1.5rem">
-  <div class="card-title">📚 Học phần đang học</div>
-  {% if enrolled_classes %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Môn học</th><th>Mã lớp</th><th>Giảng viên</th><th>Phòng</th><th>Học kỳ</th>
-          <th>Trạng thái</th></tr></thead>
-      <tbody>
-        {% for cls in enrolled_classes %}
+
+  <!-- Academic Note -->
+  <div class="note-block">
+    <span class="note-tag">Lưu ý:</span> - Sinh viên kiểm tra kỹ thời gian học, phòng học và đăng ký dữ liệu khuôn mặt trước khi vào ca điểm danh AI.<br>
+    - Khung giờ học chính khóa:<br>
+    Buổi sáng: Từ 07h30 đến 12h20 (Tiết 1 → Tiết 5)<br>
+    Buổi chiều: Từ 13h00 đến 17h50 (Tiết 6 → Tiết 10)
+  </div>
+
+  <!-- Green Week Banner -->
+  <div class="week-alert-green">
+    Hiện nay là tuần học thứ {{ global_week_num }} ({{ today.strftime('%d/%m/%Y') }}). Bạn chú ý thời gian học và trạng thái mở điểm danh của giảng viên từng lớp học phần.
+  </div>
+
+  <!-- 1. Teal Bar: Today's Schedule -->
+  <div class="section-bar teal">
+    <span>Lịch học ngày hôm nay</span>
+  </div>
+
+  <div class="vku-table-wrap">
+    <table class="vku-table">
+      <thead>
         <tr>
-          <td><span style="font-weight:600">{{ cls.course_name }}</span></td>
-          <td><span style="color:var(--muted)">{{ cls.class_name }}</span></td>
-          <td>{{ cls.lecturer.full_name if cls.lecturer else '—' }}</td>
-          <td>{{ cls.room or '—' }}</td>
-          <td><span class="badge badge-blue">{{ cls.semester }}</span></td>
-          <td>
-            {% if cls.status == 'active' %}
-              <span class="badge badge-green" style="font-size:.72rem">ĐANG HỌC</span>
-            {% else %}
-              <span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.72rem;font-weight:700;padding:.25rem .7rem">HOÀN THÀNH</span>
-            {% endif %}
-          </td>
+          <th style="width:48px">#</th>
+          <th>Tên lớp học phần</th>
+          <th>Giáo viên</th>
+          <th style="width:110px">Tuần</th>
+          <th style="width:110px">Phòng</th>
+          <th style="width:120px">Thứ / Tiết</th>
+          <th style="width:155px">Xem</th>
         </tr>
-        {% endfor %}
+      </thead>
+      <tbody>
+        {% if today_rows %}
+          {% for row in today_rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td style="color:#334155;font-weight:500">
+              {{ row.cls.course_name }} ({{ row.cls.class_name }})
+            </td>
+            <td>
+              {% if row.cls.lecturer %}
+                <a href="{{ url_for('student.contact_lecturer', lecturer_id=row.cls.lecturer.id) }}" style="color:#5A738E">
+                  {{ row.cls.lecturer.full_name }}
+                </a>
+              {% else %}—{% endif %}
+            </td>
+            <td><strong>{{ row.weeks }}</strong></td>
+            <td><strong>{{ row.room }}</strong></td>
+            <td><strong>{{ row.thu_tiet }}</strong></td>
+            <td>
+              {% if row.sess.status == 'ongoing' %}
+                <a href="{{ url_for('attendance.checkin_page') }}" class="btn-teal-action">Điểm danh ngay</a>
+              {% else %}
+                <a href="{{ url_for('student.class_timeline', class_id=row.cls.id) }}" class="btn-teal-action">Xem lịch trình</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:1.25rem;color:#73879C">
+              Hôm nay ({{ today.strftime('%d/%m/%Y') }}) bạn không có lịch học trên lớp.
+            </td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
-  {% else %}
-    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa đăng ký học phần nào</div></div>
-  {% endif %}
+
+  <!-- 2. Orange Bar: Other Days Schedule -->
+  <div class="section-bar orange">
+    <span>Lịch học các ngày khác!</span>
+  </div>
+
+  <div class="vku-table-wrap">
+    <table class="vku-table">
+      <thead>
+        <tr>
+          <th style="width:48px">#</th>
+          <th>Tên lớp học phần</th>
+          <th>Giáo viên</th>
+          <th style="width:110px">Tuần</th>
+          <th style="width:110px">Phòng</th>
+          <th style="width:120px">Thứ / Tiết</th>
+          <th style="width:155px">Lịch trình môn học</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if other_rows %}
+          {% for row in other_rows %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td style="color:#334155;font-weight:500">
+              {{ row.cls.course_name }} ({{ row.cls.class_name }})
+            </td>
+            <td>
+              {% if row.cls.lecturer %}
+                <a href="{{ url_for('student.contact_lecturer', lecturer_id=row.cls.lecturer.id) }}" style="color:#5A738E">
+                  {{ row.cls.lecturer.full_name }}
+                </a>
+              {% else %}—{% endif %}
+            </td>
+            <td><strong>{{ row.weeks }}</strong></td>
+            <td><strong>{{ row.room }}</strong></td>
+            <td><strong>{{ row.thu_tiet }}</strong></td>
+            <td>
+              <a href="{{ url_for('student.class_timeline', class_id=row.cls.id) }}" class="btn-teal-action">Xem lịch trình</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:1.25rem;color:#73879C">
+              Không có lớp học phần nào khác trong học kỳ này.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
 </div>
 {% endblock %}

@@ -1,0 +1,212 @@
+{% extends "admin/layout.html" %}
+{% block title %}Quản lý Thông báo Đào tạo — Admin{% endblock %}
+{% block page_title %}📢 Đăng &amp; Quản lý Thông báo Cổng Đào tạo{% endblock %}
+
+{% block extra_style %}
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55);
+  backdrop-filter: blur(3px); z-index: 500; place-items: center; padding: 1rem;
+}
+.modal-backdrop.open { display: grid; }
+.modal-card {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 640px;
+  padding: 1.65rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- Compose Announcement Form -->
+<div class="card" id="post-notice" style="margin-bottom:1.5rem">
+  <div class="card-title">
+    📝 Đăng thông báo mới lên Cổng thông tin Đào tạo
+    <a href="{{ url_for('auth.portal_home') }}" target="_blank" class="btn btn-outline btn-sm" style="margin-left:auto">
+      🌐 Xem trang hiển thị công khai ↗
+    </a>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.create_announcement') }}">
+    <div style="display:grid;grid-template-columns:1fr 260px;gap:1rem">
+      <div class="form-group">
+        <label class="form-label">Tiêu đề thông báo ✱</label>
+        <input type="text" name="title" class="form-control"
+               placeholder="VD: THÔNG BÁO V/v tổ chức kiểm tra đánh giá năng lực tiếng Anh đầu vào..." required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chuyên mục hiển thị ✱</label>
+        <select name="category" class="form-control">
+          <option value="academic">📌 Thông báo từ Phòng Đào tạo</option>
+          <option value="finance">💳 Thông báo về Kế hoạch Tài chính</option>
+          <option value="exam">📝 Lịch thi &amp; Khảo thí</option>
+          <option value="scholarship">🎓 Công tác Sinh viên &amp; Học bổng [CTSV]</option>
+          <option value="general">📖 Quy chế &amp; Thông báo chung</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nội dung chi tiết thông báo</label>
+      <textarea name="content" rows="4" class="form-control"
+                placeholder="Nhập nội dung chi tiết thông báo, hướng dẫn thực hiện, thời hạn nộp hồ sơ..."></textarea>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;gap:1.35rem;flex-wrap:wrap;font-size:.86rem;font-weight:500;color:var(--text-secondary)">
+        <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer">
+          <input type="checkbox" name="is_new" checked style="width:16px;height:16px;accent-color:var(--accent)">
+          Gắn huy hiệu <span class="badge badge-red">mới</span> nổi bật
+        </label>
+        <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer">
+          <input type="checkbox" name="is_pinned" style="width:16px;height:16px;accent-color:var(--accent)">
+          📌 Ghim lên đầu danh sách
+        </label>
+        <label style="display:flex;align-items:center;gap:.45rem;cursor:pointer">
+          <input type="checkbox" name="notify_students" style="width:16px;height:16px;accent-color:var(--accent)">
+          🔔 Gửi đồng thời vào hộp thư tất cả Sinh viên
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary">📢 Xuất bản lên Cổng thông tin</button>
+    </div>
+  </form>
+</div>
+
+<!-- Existing Announcements List -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1.15rem">
+    <div style="font-family:var(--head);font-weight:700;font-size:1rem">
+      📋 Danh sách thông báo đã đăng ({{ announcements|length }})
+    </div>
+    <form method="GET" style="display:flex;gap:.5rem;align-items:center">
+      <select name="category" class="form-control" style="padding:.42rem .8rem;font-size:.84rem;width:auto" onchange="this.form.submit()">
+        <option value="">Tất cả chuyên mục</option>
+        <option value="academic" {% if cat_filter=='academic' %}selected{% endif %}>Thông báo Phòng Đào tạo</option>
+        <option value="finance" {% if cat_filter=='finance' %}selected{% endif %}>Kế hoạch Tài chính</option>
+        <option value="exam" {% if cat_filter=='exam' %}selected{% endif %}>Lịch thi &amp; Khảo thí</option>
+        <option value="scholarship" {% if cat_filter=='scholarship' %}selected{% endif %}>Công tác Sinh viên [CTSV]</option>
+        <option value="general" {% if cat_filter=='general' %}selected{% endif %}>Thông báo chung</option>
+      </select>
+    </form>
+  </div>
+
+  {% if announcements %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tiêu đề thông báo</th>
+          <th>Chuyên mục</th>
+          <th>Ngày đăng</th>
+          <th>Hiển thị</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in announcements %}
+        <tr>
+          <td style="max-width:460px">
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              {% if a.is_pinned %}<span class="badge badge-amber">📌 Ghim</span>{% endif %}
+              {% if a.is_new %}<span class="badge badge-red">mới</span>{% endif %}
+              <a href="{{ url_for('auth.announcement_detail', ann_id=a.id) }}" target="_blank" style="font-weight:600;color:var(--text);text-decoration:none">
+                {{ a.title }}
+              </a>
+            </div>
+          </td>
+          <td>
+            <span class="badge {% if a.category=='finance' %}badge-blue{% elif a.category=='scholarship' %}badge-purple{% else %}badge-amber{% endif %}">
+              {{ a.category_label }}
+            </span>
+          </td>
+          <td style="white-space:nowrap;font-size:.82rem;color:var(--muted)">
+            {{ a.created_at.strftime('%d-%m-%Y %H:%M') }}
+          </td>
+          <td>
+            {% if a.is_published %}
+              <span class="badge badge-green">● Đang công khai</span>
+            {% else %}
+              <span class="badge badge-gray">Đã ẩn</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;white-space:nowrap">
+            <div style="display:flex;gap:.4rem;justify-content:flex-end">
+              <button type="button" class="btn btn-outline btn-sm"
+                      onclick='openAnnModal({{ a.id }}, {{ a.title|tojson }}, {{ a.category|tojson }}, {{ (a.content or "")|tojson }}, {{ "true" if a.is_new else "false" }}, {{ "true" if a.is_pinned else "false" }}, {{ "true" if a.is_published else "false" }})'>
+                ✏️ Sửa
+              </button>
+              <form method="POST" action="{{ url_for('admin.toggle_announcement', ann_id=a.id) }}" style="display:inline">
+                <button type="submit" class="btn btn-outline btn-sm">
+                  {% if a.is_published %}🙈 Ẩn{% else %}👁 Hiện{% endif %}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('admin.delete_announcement', ann_id=a.id) }}" style="display:inline"
+                    onsubmit="return eduConfirmForm(event, this, 'Xóa thông báo này khỏi Cổng thông tin?', 'Xóa thông báo', 'Xóa')">
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">📢</div><div class="empty-text">Chưa có thông báo nào trong mục này</div></div>
+  {% endif %}
+</div>
+
+<!-- Edit Announcement Modal -->
+<div class="modal-backdrop" id="ann-modal" onclick="if(event.target===this)closeAnnModal()">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem">
+      <h3 style="font-family:var(--head);font-size:1.05rem">✏️ Chỉnh sửa thông báo</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeAnnModal()">✕</button>
+    </div>
+    <form method="POST" id="ann-edit-form">
+      <div class="form-group">
+        <label class="form-label">Tiêu đề</label>
+        <input type="text" name="title" id="ea-title" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chuyên mục</label>
+        <select name="category" id="ea-cat" class="form-control">
+          <option value="academic">Thông báo từ Phòng Đào tạo</option>
+          <option value="finance">Thông báo về Kế hoạch Tài chính</option>
+          <option value="exam">Lịch thi &amp; Khảo thí</option>
+          <option value="scholarship">Công tác Sinh viên &amp; Học bổng [CTSV]</option>
+          <option value="general">Thông báo chung</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nội dung chi tiết</label>
+        <textarea name="content" id="ea-content" rows="5" class="form-control"></textarea>
+      </div>
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.2rem;font-size:.85rem;font-weight:600">
+        <label><input type="checkbox" name="is_new" id="ea-new"> Nhãn "mới"</label>
+        <label><input type="checkbox" name="is_pinned" id="ea-pin"> Ghim đầu trang</label>
+        <label><input type="checkbox" name="is_published" id="ea-pub"> Hiển thị công khai</label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:.5rem">
+        <button type="button" class="btn btn-outline" onclick="closeAnnModal()">Hủy</button>
+        <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+function openAnnModal(id, title, cat, content, isNew, isPin, isPub) {
+  document.getElementById('ann-edit-form').action = `/admin/announcements/${id}/edit`;
+  document.getElementById('ea-title').value = title;
+  document.getElementById('ea-cat').value = cat;
+  document.getElementById('ea-content').value = content;
+  document.getElementById('ea-new').checked = isNew;
+  document.getElementById('ea-pin').checked = isPin;
+  document.getElementById('ea-pub').checked = isPub;
+  document.getElementById('ann-modal').classList.add('open');
+}
+function closeAnnModal() {
+  document.getElementById('ann-modal').classList.remove('open');
+}
+{% endblock %}

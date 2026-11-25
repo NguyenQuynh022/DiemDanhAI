@@ -1,0 +1,89 @@
+<!-- Settings drawer (shared by Student / Lecturer / Admin) -->
+<div id="settings-root" class="settings-root" aria-hidden="true">
+  <div class="settings-backdrop" onclick="closeSettings()"></div>
+
+  <aside class="settings-drawer" role="dialog" aria-label="Cài đặt">
+    <div class="settings-head">
+      <div style="display:flex;align-items:center;gap:.75rem;min-width:0">
+        {% if current_user.avatar %}
+          <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}" class="settings-ava" alt="">
+        {% else %}
+          <div class="settings-ava">{{ current_user.full_name[0].upper() if current_user.full_name else 'U' }}</div>
+        {% endif %}
+        <div style="min-width:0">
+          <div class="settings-name">{{ current_user.full_name }}</div>
+          <div class="settings-role">
+            {% if current_user.role == 'student' %}Sinh viên{% if current_user.student_code %} · {{ current_user.student_code }}{% endif %}
+            {% elif current_user.role == 'lecturer' %}Giảng viên
+            {% else %}Quản trị viên{% endif %}
+          </div>
+        </div>
+      </div>
+      <button type="button" class="settings-close" onclick="closeSettings()" aria-label="Đóng">✕</button>
+    </div>
+
+    <div class="settings-body">
+
+      <div class="settings-section">
+        <div class="settings-title">Chế độ hiển thị</div>
+        <div class="seg">
+          <button type="button" class="seg-btn" data-theme-opt="light">☀️ Sáng</button>
+          <button type="button" class="seg-btn" data-theme-opt="dark">🌙 Tối</button>
+          <button type="button" class="seg-btn" data-theme-opt="auto">💻 Hệ thống</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Màu chủ đạo</div>
+        <div class="swatches">
+          <button type="button" class="swatch" data-accent-opt="default" title="Mặc định" style="background:linear-gradient(135deg,#2563eb,#7c3aed)"></button>
+          <button type="button" class="swatch" data-accent-opt="indigo"  title="Chàm"     style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"></button>
+          <button type="button" class="swatch" data-accent-opt="teal"    title="Xanh ngọc" style="background:linear-gradient(135deg,#0d9488,#14b8a6)"></button>
+          <button type="button" class="swatch" data-accent-opt="rose"    title="Hồng"      style="background:linear-gradient(135deg,#e11d48,#f43f5e)"></button>
+          <button type="button" class="swatch" data-accent-opt="orange"  title="Cam"       style="background:linear-gradient(135deg,#ea580c,#f59e0b)"></button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Cỡ chữ</div>
+        <div class="seg">
+          <button type="button" class="seg-btn" data-font-opt="sm" style="font-size:.78rem">Nhỏ</button>
+          <button type="button" class="seg-btn" data-font-opt="md" style="font-size:.9rem">Vừa</button>
+          <button type="button" class="seg-btn" data-font-opt="lg" style="font-size:1.05rem">Lớn</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Tùy chọn</div>
+        <label class="switch-row">
+          <span><strong>Thu gọn menu bên trái</strong><small>Mở rộng vùng nội dung trên màn hình lớn</small></span>
+          <input type="checkbox" id="pref-compact">
+        </label>
+        <label class="switch-row">
+          <span><strong>Hiện trợ lý EduBot AI</strong><small>Nút chat nổi ở góc dưới bên phải</small></span>
+          <input type="checkbox" id="pref-chatbot">
+        </label>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Tài khoản</div>
+        {% if current_user.role == 'student' %}
+          <a href="{{ url_for('student.profile') }}" class="settings-link">👤 Hồ sơ &amp; đổi mật khẩu</a>
+          <a href="{{ url_for('student.notifications') }}" class="settings-link">🔔 Thông báo học vụ</a>
+        {% elif current_user.role == 'lecturer' %}
+          <a href="{{ url_for('lecturer.profile') }}" class="settings-link">👤 Hồ sơ &amp; đổi mật khẩu</a>
+          <a href="{{ url_for('lecturer.audit_logs') }}" class="settings-link">📜 Nhật ký thao tác điểm</a>
+        {% else %}
+          <a href="{{ url_for('admin.users_list') }}" class="settings-link">👥 Quản lý tài khoản</a>
+        {% endif %}
+        <a href="{{ url_for('auth.portal_home') }}" class="settings-link">🌐 Cổng thông tin đào tạo</a>
+        <button type="button" class="settings-link" onclick="toggleFullScreen && toggleFullScreen()">⛶ Bật / tắt toàn màn hình</button>
+        <button type="button" class="settings-link" onclick="resetPrefs()">↺ Khôi phục cài đặt mặc định</button>
+      </div>
+    </div>
+
+    <div class="settings-foot">
+      <a href="{{ url_for('auth.logout') }}" class="settings-logout" onclick="return confirmLogout(event, this.href)">⏻ Đăng xuất</a>
+    </div>
+  </aside>
+</div>

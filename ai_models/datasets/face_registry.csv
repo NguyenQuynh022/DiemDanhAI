@@ -1,0 +1,6 @@
+﻿student_id,student_code,username,full_name,embedding_model,sample_count,liveness_score,is_trained,updated_at
+709,23AI016,cao.thi.quynh,Cao Thị Quỳnh,sface_onnx_128d,1,0.95,1,2026-11-25 12:06:33
+705,23AI012,mai.thi.my,Mai Thị Mỹ,sface_onnx_128d,1,0.95,1,2026-11-25 12:06:33
+702,23ITB009,do.van.inh,Đỗ Văn Inh,sface_onnx_128d,1,0.95,1,2026-11-25 12:06:33
+714,23SE021,ha.van.vinh,Hà Văn Vinh,opencv,1,,0,2026-06-04 01:46:58
+694,23ITB001,nguyen.van.an,Nguyễn Văn An,opencv,1,,0,2026-05-25 14:11:09

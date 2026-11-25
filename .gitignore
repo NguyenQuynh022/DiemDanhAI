@@ -1,0 +1,21 @@
+# Python / Flask
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+instance/
+
+# Environment variables
+.env
+
+# Binary tools & logs
+tools/cloudflared.exe
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

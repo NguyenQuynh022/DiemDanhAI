@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}EduPortal — Cổng Thông Tin Đào Tạo & Học Vụ Số{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  --head: 'Sora', 'Be Vietnam Pro', sans-serif;
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-sub: #334155;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --indigo: #4f46e5;
+  --crimson: #e11d48;
+  --amber: #f59e0b;
+  --emerald: #10b981;
+  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 12px 32px -6px rgba(15, 23, 42, 0.09);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.16);
+}
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+a { text-decoration: none; color: inherit; }
+
+.container {
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+}
+
+/* ── 1. Modern Glass Header & Navigation ───────────────────────── */
+.site-navbar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+.site-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 82px;
+  gap: 1.5rem;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+.brand-mark {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.32);
+}
+.brand-name {
+  font-family: var(--head);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  line-height: 1.15;
+}
+.brand-name span {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.brand-sub {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Nav Center Links */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  list-style: none;
+}
+.nav-links > li { position: relative; }
+.nav-links > li > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: 10px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  transition: all 0.16s;
+}
+.nav-links > li:hover > a,
+.nav-links > li > a.active {
+  background: #eff6ff;
+  color: var(--primary);
+}
+.nav-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 260px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+}
+.nav-links > li::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; height: 8px; bottom: -8px;
+}
+.nav-links > li:hover .nav-dropdown { display: block; }
+.nav-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.68rem 0.9rem;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  transition: all 0.14s;
+}
+.nav-dropdown a:hover {
+  background: #eff6ff;
+  color: var(--primary);
+}
+
+/* Nav Right Actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.68rem 1.35rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: all 0.18s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn-portal-primary {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.28);
+}
+.btn-portal-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.36);
+}
+.btn-portal-admin {
+  background: linear-gradient(135deg, #be123c, #e11d48);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.28);
+}
+.btn-portal-admin:hover { transform: translateY(-1px); }
+.btn-portal-outline {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text-sub);
+}
+.btn-portal-outline:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: var(--primary);
+}
+
+/* ── 2. Creative Hero Showcase & Search Banner ─────────────────── */
+.hero-banner {
+  background: linear-gradient(135deg, #0b132b 0%, #172554 48%, #312e81 100%);
+  padding: 3.5rem 0 4.5rem;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+}
+.hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.22), transparent 42%),
+    radial-gradient(circle at 85% 75%, rgba(168, 85, 247, 0.22), transparent 45%);
+  pointer-events: none;
+}
+.hero-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+.hero-desc {
+  font-size: 1.08rem;
+  color: rgba(226, 232, 240, 0.86);
+  max-width: 720px;
+  margin: 0 auto 2rem;
+}
+
+/* Wide Hero Search Box */
+.hero-search {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.55rem 0.6rem 0.55rem 1.35rem;
+  max-width: 700px;
+  margin: 0 auto;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  gap: 0.75rem;
+}
+.hero-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: transparent;
+}
+.hero-search input::placeholder { color: #94a3b8; }
+.hero-search button {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  padding: 0.72rem 1.45rem;
+  font-family: var(--font);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.hero-search button:hover { filter: brightness(1.08); }
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.42rem 1.05rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #93c5fd;
+  margin-bottom: 1.25rem;
+}
+.hero-pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #34d399; box-shadow: 0 0 10px #34d399;
+}
+.hero-title {
+  font-family: var(--head);
+  font-size: clamp(2.2rem, 3.4vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin-bottom: 1rem;
+}
+.hero-title span {
+  background: linear-gradient(135deg, #60a5fa 0%, #c084fc 60%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── 3. Floating Service Quick-Access Dock (4 Spacious Cards) ─── */
+.services-dock {
+  margin-top: -2.4rem;
+  position: relative;
+  z-index: 10;
+  margin-bottom: 2.5rem;
+}
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.35rem;
+}
+.service-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.45rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: #93c5fd;
+}
+.service-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  font-size: 1.65rem;
+  flex-shrink: 0;
+}
+.service-icon.s-blue   { background: linear-gradient(135deg, #dbeafe, #eff6ff); color: #2563eb; }
+.service-icon.s-indigo { background: linear-gradient(135deg, #e0e7ff, #eef2ff); color: #4f46e5; }
+.service-icon.s-teal   { background: linear-gradient(135deg, #ccfbf1, #f0fdfa); color: #0d9488; }
+.service-icon.s-amber  { background: linear-gradient(135deg, #fef3c7, #fffbeb); color: #d97706; }
+
+.service-card h3 {
+  font-family: var(--head);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+.service-card p {
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── 4. Spacious Notice Board Area ─────────────────────────────── */
+.portal-main-area {
+  flex: 1;
+  padding-bottom: 4rem;
+}
+
+/* Filter Pill Strip */
+.category-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+.cat-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.cat-pill {
+  padding: 0.58rem 1.2rem;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  transition: all 0.16s;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+.cat-pill:hover {
+  border-color: #93c5fd;
+  color: var(--primary);
+  background: #eff6ff;
+}
+.cat-pill.active {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.26);
+}
+
+/* Two-Column Spacious Grid for Default View */
+.boards-layout {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.board-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 1.85rem 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+.board-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.board-accent-bar {
+  width: 6px;
+  height: 32px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #2563eb, #7c3aed);
+}
+.board-accent-bar.finance {
+  background: linear-gradient(180deg, #f59e0b, #ea580c);
+}
+.board-head h2 {
+  font-family: var(--head);
+  font-size: 1.32rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.015em;
+}
+.board-sub {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* Spacious Announcement Items */
+.ann-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.ann-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.15rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: 15px;
+  border: 1px solid #edf2f7;
+  background: var(--surface-soft);
+  transition: all 0.18s ease;
+}
+.ann-card:hover {
+  background: #ffffff;
+  border-color: #bfdbfe;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.08);
+  transform: translateX(4px);
+}
+.ann-card.pinned {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  border-color: #bfdbfe;
+}
+
+/* Date Calendar Badge */
+.ann-date-box {
+  min-width: 64px;
+  padding: 0.5rem 0.45rem;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  text-align: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.03);
+}
+.ann-date-box .dd {
+  font-family: var(--head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.ann-date-box.finance .dd { color: #d97706; }
+.ann-date-box .mm {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.ann-body {
+  flex: 1;
+  min-width: 0;
+}
+.ann-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.16rem 0.6rem;
+  border-radius: 99px;
+  letter-spacing: 0.02em;
+}
+.tag-pin     { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.tag-new     { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,.35); }
+.tag-cat-ac  { background: #e0e7ff; color: #4338ca; }
+.tag-cat-ex  { background: #dcfce7; color: #15803d; }
+.tag-cat-sc  { background: #fae8ff; color: #86198f; }
+.tag-cat-fi  { background: #ffedd5; color: #c2410c; }
+
+.ann-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.5;
+  transition: color 0.15s;
+}
+.ann-card:hover .ann-title {
+  color: var(--primary);
+}
+.ann-excerpt {
+  font-size: 0.87rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.board-footer {
+  margin-top: 1.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+}
+.link-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 0.45rem 0.95rem;
+  border-radius: 10px;
+  background: #eff6ff;
+  transition: all 0.15s;
+}
+.link-more:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Side Policy Info Card */
+.policy-banner {
+  margin-top: 1.75rem;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: 20px;
+  padding: 1.65rem 1.85rem;
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+.policy-banner h3 {
+  font-family: var(--head);
+  font-size: 1.08rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.policy-banner p {
+  font-size: 0.88rem;
+  color: rgba(226, 232, 240, 0.85);
+  line-height: 1.65;
+  margin-bottom: 1.1rem;
+}
+
+/* Flash Bar */
+.flash-bar { margin: 1.25rem auto 0; }
+.flash-msg {
+  padding: 0.95rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  color: #1e40af;
+}
+
+/* Footer */
+.site-footer {
+  background: #ffffff;
+  color: #64748b;
+  padding: 1.35rem 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .container { padding: 0 1.5rem; }
+  .hero-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  .boards-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .nav-links { display: none; }
+  .services-grid { grid-template-columns: 1fr; }
+  .board-card { padding: 1.35rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- 1. Spacious Sticky Glass Navbar -->
+<header class="site-navbar">
+  <div class="container site-navbar-inner">
+    <a href="{{ url_for('auth.portal_home') }}" class="brand">
+      <div class="brand-mark">🎓</div>
+      <div>
+        <div class="brand-name">Edu<span>Portal</span></div>
+        <div class="brand-sub">Smart University Hub</div>
+      </div>
+    </a>
+
+    <ul class="nav-links">
+      <li>
+        <a href="{{ url_for('auth.portal_home') }}" class="{% if not cat %}active{% endif %}">Trang chủ</a>
+      </li>
+      <li>
+        <a href="{{ url_for('auth.portal_home', category='academic') }}" class="{% if cat in ['academic','exam','scholarship'] %}active{% endif %}">
+          Bảng tin Đào tạo ▾
+        </a>
+        <div class="nav-dropdown">
+          <a href="{{ url_for('auth.portal_home', category='academic') }}">📌 Thông báo Phòng Đào tạo</a>
+          <a href="{{ url_for('auth.portal_home', category='exam') }}">📝 Lịch thi &amp; Khảo thí</a>
+          <a href="{{ url_for('auth.portal_home', category='scholarship') }}">🎓 Học bổng &amp; Công tác SV</a>
+        </div>
+      </li>
+      <li>
+        <a href="{{ url_for('auth.portal_home', category='finance') }}" class="{% if cat == 'finance' %}active{% endif %}">
+          Tài chính &amp; Học phí
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('auth.portal_home', category='general') }}" class="{% if cat == 'general' %}active{% endif %}">
+          Quy chế học vụ
+        </a>
+      </li>
+    </ul>
+
+    <div class="nav-actions">
+      {% if current_user.is_authenticated %}
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn-portal btn-portal-admin">
+            🛡️ Quản trị &amp; Đăng thông báo
+          </a>
+        {% elif current_user.role == 'lecturer' %}
+          <a href="{{ url_for('lecturer.dashboard') }}" class="btn-portal btn-portal-primary">
+            👨‍🏫 Vào Cổng Giảng viên →
+          </a>
+        {% else %}
+          <a href="{{ url_for('student.dashboard') }}" class="btn-portal btn-portal-primary">
+            🎓 Vào Cổng Sinh viên →
+          </a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="btn-portal btn-portal-outline" title="Đăng xuất">
+          Đăng xuất
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn-portal btn-portal-primary">
+          Đăng nhập
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% block hero_section %}
+<!-- 3. Wide Modern Hero Banner -->
+<section class="hero-banner">
+  <div class="hero-grid-overlay"></div>
+  <div class="container hero-inner">
+    <div>
+      <div class="hero-pill"><span class="dot"></span>Cổng thông tin học vụ tập trung</div>
+      <h1 class="hero-title">
+        Không gian Đào tạo số &amp;<br><span>Điểm danh Khuôn mặt AI</span>
+      </h1>
+      <p class="hero-desc">
+        Cập nhật nhanh nhất các thông báo học vụ, lịch thi, kế hoạch tài chính từ Nhà trường và truy cập không gian làm việc dành riêng cho Giảng viên &amp; Sinh viên.
+      </p>
+
+      <form method="GET" action="{{ url_for('auth.portal_home') }}" class="hero-search">
+        {% if cat %}<input type="hidden" name="category" value="{{ cat }}">{% endif %}
+        <span style="font-size:1.15rem">🔍</span>
+        <input type="text" name="q" value="{{ q }}" placeholder="Nhập từ khóa tìm kiếm thông báo, lịch thi, học bổng, học phí...">
+        <button type="submit">Tìm kiếm</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Floating Service Quick Cards -->
+<section class="services-dock">
+  <div class="container">
+    <div class="services-grid">
+      <a href="{{ url_for('auth.login', role='student') }}" class="service-card">
+        <div class="service-icon s-blue">🎓</div>
+        <div>
+          <h3>Sinh viên</h3>
+          <p>Xem lịch học, điểm danh AI &amp; tra cứu bảng điểm</p>
+        </div>
+      </a>
+      <a href="{{ url_for('auth.login', role='lecturer') }}" class="service-card">
+        <div class="service-icon s-indigo">👨‍🏫</div>
+        <div>
+          <h3>Giảng viên</h3>
+          <p>Quản lý lớp học phần, mở phiên điểm danh &amp; nhập điểm</p>
+        </div>
+      </a>
+      <a href="{{ url_for('auth.portal_home', category='exam') }}" class="service-card">
+        <div class="service-icon s-teal">📝</div>
+        <div>
+          <h3>Lịch thi &amp; Khảo thí</h3>
+          <p>Tra cứu kế hoạch thi kết thúc học phần &amp; chuẩn đầu ra</p>
+        </div>
+      </a>
+      <a href="{{ url_for('auth.portal_home', category='scholarship') }}" class="service-card">
+        <div class="service-icon s-amber">🏆</div>
+        <div>
+          <h3>Học bổng &amp; CTSV</h3>
+          <p>Thông tin học bổng khuyến khích &amp; tài trợ doanh nghiệp</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container flash-bar">
+    {% for category, message in messages %}
+      <div class="flash-msg">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- 5. Spacious Notice Boards -->
+<main class="portal-main-area">
+  <div class="container">
+    {% block portal_main %}
+
+    <!-- Category Filter Pills -->
+    <div class="category-strip">
+      <div class="cat-pills">
+        <a href="{{ url_for('auth.portal_home') }}" class="cat-pill {% if not cat %}active{% endif %}">
+          ✨ Tất cả bảng tin
+        </a>
+        <a href="{{ url_for('auth.portal_home', category='academic') }}" class="cat-pill {% if cat == 'academic' %}active{% endif %}">
+          📌 Phòng Đào tạo
+        </a>
+        <a href="{{ url_for('auth.portal_home', category='exam') }}" class="cat-pill {% if cat == 'exam' %}active{% endif %}">
+          📝 Lịch thi &amp; Khảo thí
+        </a>
+        <a href="{{ url_for('auth.portal_home', category='scholarship') }}" class="cat-pill {% if cat == 'scholarship' %}active{% endif %}">
+          🎓 Học bổng &amp; CTSV
+        </a>
+        <a href="{{ url_for('auth.portal_home', category='finance') }}" class="cat-pill {% if cat == 'finance' %}active{% endif %}">
+          💳 Kế hoạch Tài chính
+        </a>
+      </div>
+
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.announcements_list') }}#post-notice" class="btn-portal btn-portal-admin" style="padding:.55rem 1.15rem;font-size:.86rem">
+          ➕ Đăng thông báo mới
+        </a>
+      {% endif %}
+    </div>
+
+    {% if filtered_anns is not none %}
+      <!-- Single Wide Board when filtering by category -->
+      <section class="board-card">
+        <div class="board-head">
+          <div class="board-title-wrap">
+            <div class="board-accent-bar {% if cat == 'finance' %}finance{% endif %}"></div>
+            <div>
+              <h2>
+                {% if cat == 'finance' %}Thông báo Kế hoạch Tài chính &amp; Học phí
+                {% elif cat == 'exam' %}Lịch thi &amp; Công tác Khảo thí
+                {% elif cat == 'scholarship' %}Công tác Sinh viên &amp; Học bổng
+                {% elif cat == 'general' %}Quy chế &amp; Thông báo chung
+                {% else %}Thông báo từ Phòng Đào tạo{% endif %}
+              </h2>
+              <div class="board-sub">Hiển thị {{ filtered_anns|length }} thông báo chính thức {% if q %}cho từ khóa "{{ q }}"{% endif %}</div>
+            </div>
+          </div>
+          <a href="{{ url_for('auth.portal_home') }}" class="btn-portal btn-portal-outline" style="padding:.48rem 1rem;font-size:.85rem">
+            ← Quay lại tổng quan
+          </a>
+        </div>
+
+        {% if filtered_anns %}
+          <div class="ann-feed">
+            {% for a in filtered_anns %}
+            <a href="{{ url_for('auth.announcement_detail', ann_id=a.id) }}" class="ann-card {% if a.is_pinned %}pinned{% endif %}">
+              <div class="ann-date-box {% if a.category == 'finance' %}finance{% endif %}">
+                <div class="dd">{{ a.created_at.strftime('%d') }}</div>
+                <div class="mm">Thg {{ a.created_at.strftime('%m/%y') }}</div>
+              </div>
+              <div class="ann-body">
+                <div class="ann-tags">
+                  {% if a.is_pinned %}<span class="tag-chip tag-pin">📌 Ghim quan trọng</span>{% endif %}
+                  {% if a.is_new %}<span class="tag-chip tag-new">MỚI</span>{% endif %}
+                  <span class="tag-chip {% if a.category=='finance' %}tag-cat-fi{% elif a.category=='exam' %}tag-cat-ex{% elif a.category=='scholarship' %}tag-cat-sc{% else %}tag-cat-ac{% endif %}">
+                    {{ a.category_label }}
+                  </span>
+                </div>
+                <div class="ann-title">{{ a.title }}</div>
+                {% if a.content and a.content != a.title %}
+                  <div class="ann-excerpt">{{ a.content }}</div>
+                {% endif %}
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="padding:3.5rem 1rem;text-align:center;color:var(--muted);font-size:1rem">
+            📭 Không tìm thấy thông báo nào phù hợp trong chuyên mục này.
+          </div>
+        {% endif %}
+      </section>
+
+    {% else %}
+      <!-- Spacious Two-Column Layout -->
+      <div class="boards-layout">
+
+        <!-- Left Main Column: Academic, Exam & Scholarship Announcements -->
+        <section class="board-card">
+          <div class="board-head">
+            <div class="board-title-wrap">
+              <div class="board-accent-bar"></div>
+              <div>
+                <h2>Thông báo từ Phòng Đào tạo</h2>
+                <div class="board-sub">Tin tức học vụ, lịch thi, xét chuẩn đầu ra &amp; học bổng sinh viên {% if q %}· Lọc theo "{{ q }}"{% endif %}</div>
+              </div>
+            </div>
+          </div>
+
+          {% if academic_anns %}
+            <div class="ann-feed">
+              {% for a in academic_anns %}
+              <a href="{{ url_for('auth.announcement_detail', ann_id=a.id) }}" class="ann-card {% if a.is_pinned %}pinned{% endif %}">
+                <div class="ann-date-box">
+                  <div class="dd">{{ a.created_at.strftime('%d') }}</div>
+                  <div class="mm">Thg {{ a.created_at.strftime('%m/%y') }}</div>
+                </div>
+                <div class="ann-body">
+                  <div class="ann-tags">
+                    {% if a.is_pinned %}<span class="tag-chip tag-pin">📌 Quan trọng</span>{% endif %}
+                    {% if a.is_new %}<span class="tag-chip tag-new">MỚI</span>{% endif %}
+                    {% if a.category == 'exam' %}
+                      <span class="tag-chip tag-cat-ex">Khảo thí &amp; Lịch thi</span>
+                    {% elif a.category == 'scholarship' %}
+                      <span class="tag-chip tag-cat-sc">Học bổng CTSV</span>
+                    {% else %}
+                      <span class="tag-chip tag-cat-ac">Phòng Đào tạo</span>
+                    {% endif %}
+                  </div>
+                  <div class="ann-title">{{ a.title }}</div>
+                  {% if a.content and a.content != a.title %}
+                    <div class="ann-excerpt">{{ a.content }}</div>
+                  {% endif %}
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+            <div class="board-footer">
+              <a href="{{ url_for('auth.portal_home', category='academic') }}" class="link-more">
+                Xem toàn bộ thông báo đào tạo →
+              </a>
+            </div>
+          {% else %}
+            <div style="padding:3rem 1rem;text-align:center;color:var(--muted)">Chưa có thông báo đào tạo nào.</div>
+          {% endif %}
+        </section>
+
+        <!-- Right Column: Finance Board + Account Policy Card -->
+        <div>
+          <section class="board-card">
+            <div class="board-head">
+              <div class="board-title-wrap">
+                <div class="board-accent-bar finance"></div>
+                <div>
+                  <h2>Kế hoạch Tài chính</h2>
+                  <div class="board-sub">Thông báo học phí, bảo hiểm &amp; chế độ chính sách</div>
+                </div>
+              </div>
+            </div>
+
+            {% if finance_anns %}
+              <div class="ann-feed">
+                {% for a in finance_anns %}
+                <a href="{{ url_for('auth.announcement_detail', ann_id=a.id) }}" class="ann-card {% if a.is_pinned %}pinned{% endif %}">
+                  <div class="ann-date-box finance">
+                    <div class="dd">{{ a.created_at.strftime('%d') }}</div>
+                    <div class="mm">Thg {{ a.created_at.strftime('%m/%y') }}</div>
+                  </div>
+                  <div class="ann-body">
+                    <div class="ann-tags">
+                      {% if a.is_pinned %}<span class="tag-chip tag-pin">📌 Ghim</span>{% endif %}
+                      {% if a.is_new %}<span class="tag-chip tag-new">MỚI</span>{% endif %}
+                      <span class="tag-chip tag-cat-fi">Tài chính</span>
+                    </div>
+                    <div class="ann-title">{{ a.title }}</div>
+                  </div>
+                </a>
+                {% endfor %}
+              </div>
+              <div class="board-footer">
+                <a href="{{ url_for('auth.portal_home', category='finance') }}" class="link-more">
+                  Xem tất cả thông báo tài chính →
+                </a>
+              </div>
+            {% else %}
+              <div style="padding:2rem 1rem;text-align:center;color:var(--muted)">Chưa có thông báo kế hoạch tài chính.</div>
+            {% endif %}
+          </section>
+        </div>
+
+      </div>
+    {% endif %}
+
+    {% endblock %}
+  </div>
+</main>
+
+<!-- Clean Copyright Footer -->
+<footer class="site-footer">
+  <div class="container">
+    &copy; Bản quyền thuộc về Nguyễn Thị Diễm Quỳnh
+  </div>
+</footer>
+
+</body>
+</html>

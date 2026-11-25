@@ -16,25 +16,25 @@ from models.notification import Notification
 from extensions import db
 
 
+from utils.timetable import get_current_semester_id, format_semester_label
+
 # =========================================================
-# HỌC KỲ HIỆN TẠI
+# HỌC KỲ HIỆN TẠI (ĐỘNG THEO THÁNG: HK1 T8-T12, HK2 T2-T5)
 # =========================================================
 
-CURRENT_SEM = "HK2-2025"
+def _get_current_sem() -> str:
+    return get_current_semester_id()
 
 
 # =========================================================
 # LABEL HỌC KỲ
 # =========================================================
 
-SEM_LABELS = {
-    "HK1-2023": "HK1 năm học 2023-2024",
-    "HK2-2023": "HK2 năm học 2023-2024",
-    "HK1-2024": "HK1 năm học 2024-2025",
-    "HK2-2024": "HK2 năm học 2024-2025",
-    "HK1-2025": "HK1 năm học 2025-2026",
-    "HK2-2025": "HK2 năm học 2025-2026",
-}
+def _sem_label(sem_id: str) -> str:
+    try:
+        return format_semester_label(sem_id)
+    except Exception:
+        return sem_id
 
 
 # =========================================================
@@ -73,10 +73,6 @@ TIET_LABEL = {
 # =========================================================
 # HELPERS
 # =========================================================
-
-def _sem_label(sem_id: str) -> str:
-    return SEM_LABELS.get(sem_id, sem_id)
-
 
 def _grade_letter(total) -> str:
 
@@ -156,26 +152,19 @@ _BASE_RULES = """
 Bạn là trợ lý AI của hệ thống quản lý đào tạo EduPortal.
 
 === QUY TẮC NĂM HỌC & HỌC KỲ ===
-- HK1 bắt đầu tháng 9.
-- HK2 bắt đầu tháng 1 năm sau.
-- HK2 năm học 2025-2026 học các tháng:
-  1, 3, 4, 5, 6 năm 2026.
-- Nghỉ toàn bộ tháng 2 do Tết.
-- Mỗi học phần gồm 15 buổi học.
-- HK2-2025 gồm 18 buổi vì kéo dài tới tháng 6.
+- Học kỳ 1 (HK1) bắt đầu vào tháng 8 và kết thúc vào tháng 12 cùng năm.
+- Học kỳ 2 (HK2) bắt đầu vào tháng 2 và kết thúc vào tháng 5 năm sau.
+- Lịch học chính khóa diễn ra từ Thứ 2 đến Thứ 6 (không học cuối tuần).
 
-=== CẤU TRÚC LỚP HỌC PHẦN ===
-- Mỗi học phần mở đúng 7 lớp.
-- Ví dụ: CS101-01 đến CS101-07.
-- 7 lớp được phân bổ cho 2-3 giảng viên.
-- Mỗi lớp có 30-40 sinh viên.
-- Mỗi sinh viên chỉ thuộc 1 lớp của mỗi môn.
+=== CẤU TRÚC ĐĂNG KÝ TÍN CHỈ & LỚP HỌC PHẦN ===
+- Admin (Phòng Đào tạo) mở cổng đăng ký tín chỉ và tạo các lớp học phần.
+- Sinh viên đăng ký tối thiểu 3 môn và tối đa 7 môn mỗi học kỳ (trung bình 2 tín chỉ/môn).
+- Không học trùng lặp môn (cùng mã học phần) trong cùng 1 học kỳ.
+- Không trùng lịch học (Thứ & Tiết) giữa các lớp học phần.
+- Mã số sinh viên (MSSV) tối đa 8 ký tự gồm chữ IN HOA và số, 2 số đầu là Khóa tuyển sinh (ví dụ: 23ITB185).
 
 === QUY TẮC GIẢNG VIÊN ===
-- Mỗi giảng viên dạy 3-4 môn/kỳ.
-- Tổng 5-10 buổi/tuần.
-- Không trùng lịch.
-- Không trùng phòng.
+- Lịch giảng dạy của giảng viên do Admin sắp xếp hợp lý từ Thứ 2 đến Thứ 6, không trùng ca dạy và không trùng phòng học.
 
 === PHÂN QUYỀN ===
 
@@ -204,6 +193,7 @@ Giảng viên KHÔNG được:
 def build_student_prompt(user: User) -> str:
 
     today = date.today()
+    cur_sem = _get_current_sem()
 
     lines = [
         _BASE_RULES,
@@ -228,7 +218,7 @@ def build_student_prompt(user: User) -> str:
     )
 
     lines.append(
-        f"Học kỳ hiện tại: {_sem_label(CURRENT_SEM)}"
+        f"Học kỳ hiện tại: {_sem_label(cur_sem)}"
     )
 
     # =====================================================
@@ -241,14 +231,14 @@ def build_student_prompt(user: User) -> str:
         .filter(
             Enrollment.student_id == user.id,
             Enrollment.status == "enrolled",
-            Class.semester == CURRENT_SEM,
+            Class.semester == cur_sem,
         )
         .all()
     )
 
     lines.append("")
     lines.append(
-        f"=== LỚP ĐANG HỌC ({_sem_label(CURRENT_SEM)}) ==="
+        f"=== LỚP ĐANG HỌC ({_sem_label(cur_sem)}) ==="
     )
 
     if current_enrolls:
@@ -415,7 +405,7 @@ def build_student_prompt(user: User) -> str:
     lines.append("")
     lines.append(
         f"=== ĐIỂM DANH "
-        f"{_sem_label(CURRENT_SEM)} ==="
+        f"{_sem_label(cur_sem)} ==="
     )
 
     if current_enrolls:
@@ -492,6 +482,7 @@ def build_student_prompt(user: User) -> str:
 def build_lecturer_prompt(user: User) -> str:
 
     today = date.today()
+    cur_sem = _get_current_sem()
 
     lines = [
         _BASE_RULES,
@@ -512,7 +503,7 @@ def build_lecturer_prompt(user: User) -> str:
     )
 
     lines.append(
-        f"Học kỳ hiện tại: {_sem_label(CURRENT_SEM)}"
+        f"Học kỳ hiện tại: {_sem_label(cur_sem)}"
     )
 
     # =====================================================
@@ -522,7 +513,7 @@ def build_lecturer_prompt(user: User) -> str:
     current_classes = (
         Class.query.filter_by(
             lecturer_id=user.id,
-            semester=CURRENT_SEM,
+            semester=cur_sem,
             status="active"
         ).all()
     )
@@ -530,7 +521,7 @@ def build_lecturer_prompt(user: User) -> str:
     lines.append("")
     lines.append(
         f"=== LỚP ĐANG DẠY "
-        f"({_sem_label(CURRENT_SEM)}) ==="
+        f"({_sem_label(cur_sem)}) ==="
     )
 
     if current_classes:

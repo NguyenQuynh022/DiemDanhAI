@@ -1,82 +1,79 @@
 {% extends "student/layout.html" %}
 {% block title %}Giảng viên — {{ lect.full_name }}{% endblock %}
-{% block page_title %}👨‍🏫 Thông tin giảng viên{% endblock %}
+{% block page_title %}👨‍🏫 Hồ sơ giảng viên bộ môn{% endblock %}
 
 {% block content %}
-<div style="display:grid;grid-template-columns:280px 1fr;gap:1.5rem">
+<div style="margin-bottom:1rem">
+  <a href="{{ url_for('student.contact_lecturers_list') }}" class="btn btn-outline btn-sm">← Danh sách giảng viên</a>
+</div>
 
-  <!-- Left -->
-  <div class="card" style="text-align:center;height:fit-content">
-    <div style="width:90px;height:90px;border-radius:50%;
-                background:linear-gradient(135deg,#4f46e5,#7c3aed);
-                display:grid;place-items:center;font-size:2.2rem;color:#fff;
-                font-weight:700;margin:0 auto 1rem;border:3px solid #ede9fe">
+<div class="grid-profile">
+  <!-- Left Card -->
+  <div class="card" style="text-align:center;overflow:hidden">
+    <div style="height:80px;margin:-1.4rem -1.5rem 0;background:var(--hero-gradient)"></div>
+    <div style="width:92px;height:92px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-family:var(--head);font-size:2.1rem;color:#fff;font-weight:700;margin:-46px auto .85rem;border:4px solid #fff;box-shadow:var(--shadow-md)">
       {{ lect.full_name[0].upper() }}
     </div>
-    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.25rem">
+    <div style="font-family:var(--head);font-weight:700;font-size:1.12rem;color:var(--text)">
       {{ lect.full_name }}
     </div>
-    <div style="color:#4b5563;font-size:.85rem;margin-bottom:.75rem">{{ lect.email or '—' }}</div>
+    <div style="color:var(--muted);font-size:.84rem;margin:.2rem 0 .65rem">{{ lect.email or '—' }}</div>
     <span class="badge badge-blue">Giảng viên</span>
 
-    <div style="margin-top:1.25rem;text-align:left">
+    <div style="margin-top:1.25rem;text-align:left;display:flex;flex-direction:column;gap:.45rem">
       {% if lect.phone %}
-      <div style="display:flex;gap:.5rem;padding:.55rem .9rem;background:#f8fafc;border-radius:.4rem;margin-bottom:.4rem;font-size:.85rem">
-        <span style="color:#6b7280;min-width:90px">📞 Điện thoại</span>
-        <span style="font-weight:600">{{ lect.phone }}</span>
+      <div style="display:flex;justify-content:space-between;padding:.6rem .85rem;background:var(--surface2);border:1px solid var(--border);border-radius:9px;font-size:.84rem">
+        <span style="color:var(--muted);font-weight:600">📞 Điện thoại</span>
+        <a href="tel:{{ lect.phone }}" style="font-weight:700;color:var(--accent-text);text-decoration:none">{{ lect.phone }}</a>
       </div>
       {% endif %}
-      <div style="display:flex;gap:.5rem;padding:.55rem .9rem;background:#f8fafc;border-radius:.4rem;margin-bottom:.4rem;font-size:.85rem">
-        <span style="color:#6b7280;min-width:90px">📚 Số lớp</span>
-        <span style="font-weight:600">{{ classes|length }} lớp đang dạy</span>
+      <div style="display:flex;justify-content:space-between;padding:.6rem .85rem;background:var(--surface2);border:1px solid var(--border);border-radius:9px;font-size:.84rem">
+        <span style="color:var(--muted);font-weight:600">📚 Lớp phụ trách</span>
+        <span style="font-weight:700">{{ classes|length }} lớp học kỳ này</span>
       </div>
     </div>
 
     {% if lect.bio %}
-    <div style="margin-top:1rem;padding:.75rem;background:#f1f5f9;border-radius:.5rem;
-                font-size:.82rem;color:#374151;text-align:left;line-height:1.6">
+    <div style="margin-top:1rem;padding:.85rem;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 9px 9px 0;font-size:.82rem;color:var(--text-secondary);text-align:left;line-height:1.6">
       {{ lect.bio }}
     </div>
     {% endif %}
-
-    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline btn-sm" style="margin-top:1.25rem">
-      ← Quay lại
-    </a>
   </div>
 
-  <!-- Right: classes -->
+  <!-- Right Classes Table -->
   <div class="card">
-    <div class="card-title">📚 Các lớp học phần đang phụ trách</div>
+    <div class="card-title">📚 Các lớp học phần thầy/cô đang phụ trách</div>
     {% if classes %}
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Môn học</th>
+            <th>Tên học phần</th>
             <th>Mã lớp</th>
             <th>Học kỳ</th>
-            <th>Phòng</th>
+            <th>Phòng học</th>
             <th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
           {% for cls in classes %}
           <tr>
-            <td><span style="font-weight:600">{{ cls.course_name }}</span>
-                <br><span style="font-size:.75rem;color:#6b7280">{{ cls.course_code or '' }}</span></td>
-            <td>{{ cls.class_name }}</td>
+            <td>
+              <div style="font-weight:600;color:var(--text)">{{ cls.course_name }}</div>
+              <div style="font-size:.74rem;color:var(--muted)">{{ cls.course_code or '' }}</div>
+            </td>
+            <td><strong style="color:var(--accent-text)">{{ cls.class_name }}</strong></td>
             <td><span class="badge badge-blue">{{ cls.semester }}</span></td>
-            <td>{{ cls.room or '—' }}</td>
-            <td><span class="badge badge-green">Đang học</span></td>
+            <td>🏫 {{ cls.room or '—' }}</td>
+            <td><span class="badge badge-green">● Đang giảng dạy</span></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-      <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có lớp nào</div></div>
+      <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có lớp học phần nào</div></div>
     {% endif %}
   </div>
-
 </div>
 {% endblock %}

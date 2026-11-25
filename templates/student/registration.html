@@ -1,0 +1,263 @@
+{% extends "student/layout.html" %}
+{% block title %}Đăng ký tín chỉ — EduPortal{% endblock %}
+
+{% block extra_style %}
+.reg-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.reg-kpi {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.95rem 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reg-kpi .val {
+  font-family: var(--head);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.reg-kpi .lbl {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+@media (max-width: 900px) {
+  .reg-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
+{% endblock %}
+
+{% block content %}
+<div class="x-panel">
+
+  <!-- Header -->
+  <div class="x-title">
+    <h2>Đăng ký tín chỉ học phần — {{ sem_label }} ({{ target_sem }})</h2>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      {% if is_open %}
+        <span class="badge badge-green" style="padding:.32rem .8rem;font-size:.8rem">🟢 ĐANG MỞ ĐĂNG KÝ TÍN CHỈ</span>
+      {% else %}
+        <span class="badge badge-red" style="padding:.32rem .8rem;font-size:.8rem">🔒 ĐÃ ĐÓNG CỔNG ĐĂNG KÝ</span>
+      {% endif %}
+      <a href="{{ url_for('student.schedule', semester=target_sem) }}" class="btn btn-outline btn-sm">📅 Xem Thời khóa biểu tuần</a>
+    </div>
+  </div>
+
+  <!-- Rules Note -->
+  <div class="note-block">
+    <span class="note-tag">Quy định:</span>
+    - Lịch học chính khóa từ <strong>Thứ 2 đến Thứ 6</strong> · Mỗi sinh viên đăng ký <strong>tối thiểu {{ min_courses }} môn</strong> và <strong>tối đa {{ max_courses }} môn</strong> (trung bình 2 tín chỉ/môn).<br>
+    - Hệ thống tự động kiểm tra <strong>không cho phép học trùng lặp môn</strong> trong cùng 1 học kỳ và <strong>không trùng khung giờ Thứ / Tiết</strong> giữa các lớp.
+  </div>
+
+  {% if not is_open %}
+  <div style="background:#FEF2F2;border:1px solid #FECACA;border-left:4px solid #EF4444;color:#991B1B;padding:.85rem 1.15rem;border-radius:6px;margin-bottom:1.25rem;font-size:.86rem;font-weight:600">
+    🔒 {{ reg_cfg.status_reason if reg_cfg else 'Hiện tại Phòng Đào tạo (Admin) chưa mở đợt đăng ký tín chỉ. Sinh viên chỉ có thể đăng ký khi Admin mở cổng.' }}
+  </div>
+  {% elif my_classes|length < min_courses %}
+  <div style="background:#FFFBEB;border:1px solid #FDE68A;border-left:4px solid #F59E0B;color:#92400E;padding:.85rem 1.15rem;border-radius:6px;margin-bottom:1.25rem;font-size:.86rem;font-weight:600">
+    ⚠️ Bạn mới đăng ký <strong>{{ my_classes|length }}/{{ min_courses }} môn tối thiểu</strong>. Vui lòng chọn thêm ít nhất {{ min_courses - my_classes|length }} môn học phần bên dưới!
+    {% if reg_cfg and (reg_cfg.open_from or reg_cfg.open_until) %}<div style="font-size:.8rem;margin-top:.2rem;font-weight:500">🕒 {{ reg_cfg.status_reason }}</div>{% endif %}
+  </div>
+  {% else %}
+  <div class="week-alert-green">
+    ✅ Bạn đã đăng ký hợp lệ <strong>{{ my_classes|length }}/{{ max_courses }} môn học phần</strong> ({{ total_credits }} tín chỉ) — Đạt yêu cầu tối thiểu {{ min_courses }} môn/học kỳ.
+    {% if reg_cfg and (reg_cfg.open_from or reg_cfg.open_until) %}<span style="margin-left:.5rem;font-weight:600">· 🕒 {{ reg_cfg.status_reason }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <!-- KPI Summary -->
+  <div class="reg-summary-grid">
+    <div class="reg-kpi">
+      <div>
+        <div class="val" style="color:var(--accent)">{{ my_classes|length }} / {{ max_courses }}</div>
+        <div class="lbl">Số môn đã đăng ký</div>
+      </div>
+      <span style="font-size:1.4rem">📚</span>
+    </div>
+    <div class="reg-kpi">
+      <div>
+        <div class="val">{{ min_courses }} môn</div>
+        <div class="lbl">Yêu cầu tối thiểu</div>
+      </div>
+      <span style="font-size:1.4rem">🎯</span>
+    </div>
+    <div class="reg-kpi">
+      <div>
+        <div class="val" style="color:#059669">{{ total_credits }} TC</div>
+        <div class="lbl">Tổng tín chỉ kỳ này</div>
+      </div>
+      <span style="font-size:1.4rem">⭐</span>
+    </div>
+    <div class="reg-kpi">
+      <div>
+        <div class="val">{{ available_rows|length }}</div>
+        <div class="lbl">Lớp học phần đang mở</div>
+      </div>
+      <span style="font-size:1.4rem">🏫</span>
+    </div>
+  </div>
+
+  <!-- Section 1: My Registered Courses -->
+  <div class="section-bar teal">
+    <span>1. Các lớp học phần bạn đã đăng ký trong kỳ ({{ my_classes|length }} môn · {{ total_credits }} tín chỉ)</span>
+  </div>
+
+  <div class="vku-table-wrap" style="margin-bottom:1.75rem">
+    <table class="vku-table">
+      <thead>
+        <tr>
+          <th style="width:45px">#</th>
+          <th>Mã lớp</th>
+          <th>Tên học phần</th>
+          <th style="width:85px">Tín chỉ</th>
+          <th>Giảng viên</th>
+          <th style="width:110px">Phòng</th>
+          <th style="width:125px">Thứ / Tiết</th>
+          <th style="width:125px">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if my_classes %}
+          {% for cls in my_classes %}
+          {% set info = cls.schedule_info or {} %}
+          {% set _, thu_tiet = format_sched(cls) %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><strong style="color:var(--accent-text)">{{ cls.class_name }}</strong></td>
+            <td style="font-weight:600;color:var(--text)">{{ cls.course_name }} ({{ cls.course_code }})</td>
+            <td><span class="badge badge-blue">{{ info.get('credits', 2) }} TC</span></td>
+            <td>{{ cls.lecturer.full_name if cls.lecturer else '—' }}</td>
+            <td><strong>{{ cls.room or '—' }}</strong></td>
+            <td><strong>{{ thu_tiet }}</strong></td>
+            <td>
+              {% if is_open %}
+              <form method="POST" action="{{ url_for('student.drop_credit_class', class_id=cls.id) }}"
+                    onsubmit="return eduConfirmForm(event, this, 'Hủy đăng ký học phần {{ cls.course_name }} ({{ cls.class_name }})?', 'Hủy đăng ký học phần', 'Hủy môn')">
+                <button type="submit" class="btn btn-danger btn-sm">✕ Hủy môn</button>
+              </form>
+              {% else %}
+                <span class="badge badge-green">Đã chốt</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align:center;padding:1.25rem;color:var(--muted)">
+              Bạn chưa đăng ký học phần nào trong kỳ {{ target_sem }}.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 2: Available Open Courses -->
+  <div class="section-bar orange">
+    <span>2. Danh sách các lớp học phần mở đăng ký ({{ available_rows|length }} lớp · Thứ 2 → Thứ 6)</span>
+  </div>
+
+  <div class="filter-row">
+    <input type="text" id="reg-search" class="form-control" style="max-width:360px"
+           placeholder="🔍 Tìm kiếm môn học, mã học phần, giảng viên, thứ..."
+           oninput="filterRegRows(this.value)">
+    <label style="display:flex;align-items:center;gap:.45rem;font-size:.84rem;font-weight:600;color:var(--text-secondary);cursor:pointer">
+      <input type="checkbox" id="only-valid" onchange="toggleOnlyValid(this.checked)" style="width:16px;height:16px;accent-color:var(--accent)">
+      Chỉ hiện các lớp không trùng lịch / chưa học
+    </label>
+  </div>
+
+  <div class="vku-table-wrap">
+    <table class="vku-table" id="reg-open-table">
+      <thead>
+        <tr>
+          <th style="width:45px">#</th>
+          <th>Mã lớp</th>
+          <th>Tên môn học phần</th>
+          <th style="width:85px">Tín chỉ</th>
+          <th>Giảng viên</th>
+          <th style="width:100px">Phòng</th>
+          <th style="width:125px">Thứ / Tiết</th>
+          <th style="width:95px">Sĩ số</th>
+          <th style="width:180px">Đăng ký</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if available_rows %}
+          {% for r in available_rows %}
+          <tr class="reg-row" data-valid="{{ '1' if r.state == 'available' else '0' }}">
+            <td>{{ loop.index }}</td>
+            <td><strong style="color:var(--text)">{{ r.cls.class_name }}</strong></td>
+            <td>
+              <div style="font-weight:600;color:var(--text)">{{ r.cls.course_name }}</div>
+              <div style="font-size:.74rem;color:var(--muted)">Mã HP: {{ r.cls.course_code }}</div>
+            </td>
+            <td><span class="badge badge-blue">{{ r.credits }} TC</span></td>
+            <td>{{ r.cls.lecturer.full_name if r.cls.lecturer else '—' }}</td>
+            <td><strong>{{ r.cls.room or '—' }}</strong></td>
+            <td><strong>{{ r.thu_tiet }}</strong></td>
+            <td>{{ r.enrolled_count }}/{{ r.cls.max_students }}</td>
+            <td>
+              {% if r.state == 'enrolled' %}
+                <span class="badge badge-green">✓ Đã đăng ký</span>
+              {% elif not is_open %}
+                <span class="badge badge-gray">Đang đóng</span>
+              {% elif r.state == 'available' %}
+                <form method="POST" action="{{ url_for('student.enroll_credit_class', class_id=r.cls.id) }}" style="margin:0">
+                  <button type="submit" class="btn-teal-action">⊕ Đăng ký ngay</button>
+                </form>
+              {% elif r.state == 'time_conflict' %}
+                <span class="badge badge-red" title="{{ r.conflict_reason }}">⚠️ {{ r.conflict_reason }}</span>
+              {% elif r.state == 'same_course' %}
+                <span class="badge badge-purple" title="{{ r.conflict_reason }}">✓ Đã chọn nhóm khác</span>
+              {% elif r.state == 'full' %}
+                <span class="badge badge-gray">Hết chỗ</span>
+              {% else %}
+                <span class="badge badge-amber">{{ r.conflict_reason }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align:center;padding:1.5rem;color:var(--muted)">
+              Chưa có lớp học phần nào được mở cho học kỳ {{ target_sem }}.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_script %}
+function filterRegRows(q) {
+  const term = q.trim().toLowerCase();
+  const onlyValid = document.getElementById('only-valid').checked;
+  document.querySelectorAll('#reg-open-table .reg-row').forEach(row => {
+    const matchText  = row.textContent.toLowerCase().includes(term);
+    const matchValid = !onlyValid || row.dataset.valid === '1';
+    row.style.display = (matchText && matchValid) ? '' : 'none';
+  });
+}
+function toggleOnlyValid(checked) {
+  filterRegRows(document.getElementById('reg-search').value);
+}
+{% endblock %}

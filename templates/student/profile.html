@@ -1,133 +1,150 @@
 {% extends "student/layout.html" %}
 {% block title %}Hồ sơ cá nhân{% endblock %}
-{% block page_title %}👤 Hồ sơ cá nhân{% endblock %}
+{% block page_title %}👤 Hồ sơ sinh viên{% endblock %}
 
 {% block extra_style %}
-.avatar-wrap { position:relative; width:100px; height:100px; margin:0 auto 1.25rem; }
-.avatar-img  { width:100px; height:100px; border-radius:50%; object-fit:cover;
-               border:3px solid #dbeafe; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-.avatar-placeholder { width:100px; height:100px; border-radius:50%;
-  background:linear-gradient(135deg,#3b82f6,#6366f1);
-  display:grid; place-items:center; font-size:2.5rem; color:#fff;
-  border:3px solid #dbeafe; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-.avatar-upload-btn {
-  position:absolute; bottom:2px; right:2px;
-  width:30px; height:30px; border-radius:50%;
-  background:#3b82f6; border:2px solid #fff;
-  display:grid; place-items:center; cursor:pointer;
-  font-size:.85rem; transition:background .2s;
-  box-shadow:0 1px 4px rgba(0,0,0,.2);
+.profile-banner {
+  height: 86px;
+  margin: -1.4rem -1.5rem 0;
+  background: var(--hero-gradient);
 }
-.avatar-upload-btn:hover { background:#1d4ed8; }
-#avatar-file { display:none; }
-.info-row { display:flex; gap:.5rem; align-items:center;
-  padding:.6rem .9rem; background:#f8fafc; border-radius:.4rem;
-  font-size:.85rem; color:#374151; margin-bottom:.4rem; }
-.info-label { color:#6b7280; min-width:90px; font-weight:500; }
-.info-val { font-weight:600; color:#111827; }
+.avatar-wrap {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  margin: -52px auto 0.9rem;
+}
+.avatar-img {
+  width: 104px; height: 104px; border-radius: 50%; object-fit: cover;
+  border: 4px solid #fff; box-shadow: var(--shadow-md); background: #fff;
+}
+.avatar-placeholder {
+  width: 104px; height: 104px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: grid; place-items: center; font-family: var(--head);
+  font-size: 2.3rem; font-weight: 700; color: #fff;
+  border: 4px solid #fff; box-shadow: var(--shadow-md);
+}
+.avatar-upload-btn {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); border: 2px solid #fff; color: #fff;
+  display: grid; place-items: center; cursor: pointer;
+  font-size: 0.85rem; transition: transform 0.15s, background 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.avatar-upload-btn:hover { background: var(--accent-text); transform: scale(1.08); }
+#avatar-file { display: none; }
+
+.info-row {
+  display: flex; justify-content: space-between; gap: 0.5rem; align-items: center;
+  padding: 0.65rem 0.9rem; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; font-size: 0.84rem; margin-bottom: 0.45rem;
+}
+.info-label { color: var(--muted); font-weight: 600; }
+.info-val { font-weight: 700; color: var(--text); }
 {% endblock %}
 
 {% block content %}
-<div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem">
+<div class="grid-profile">
 
-  <!-- Left: Avatar + Info -->
-  <div>
-    <div class="card" style="text-align:center">
-      <div class="avatar-wrap">
-        {% if user.avatar %}
-          <img src="{{ url_for('static', filename='uploads/avatars/' + user.avatar) }}"
-               class="avatar-img" alt="Avatar" id="avatar-preview">
-        {% else %}
-          <div class="avatar-placeholder" id="avatar-preview-placeholder">
-            {{ user.full_name[0].upper() if user.full_name else '?' }}
-          </div>
-          <img src="" class="avatar-img" id="avatar-preview"
-               style="display:none; position:absolute; top:0; left:0;">
-        {% endif %}
-        <label class="avatar-upload-btn" for="avatar-file" title="Đổi ảnh">✏️</label>
+  <!-- Left: Avatar + Student Card -->
+  <div class="card" style="text-align:center;overflow:hidden">
+    <div class="profile-banner"></div>
+    <div class="avatar-wrap">
+      {% if user.avatar %}
+        <img src="{{ url_for('static', filename='uploads/avatars/' + user.avatar) }}"
+             class="avatar-img" alt="Avatar" id="avatar-preview">
+      {% else %}
+        <div class="avatar-placeholder" id="avatar-preview-placeholder">
+          {{ user.full_name[0].upper() if user.full_name else '?' }}
+        </div>
+        <img src="" class="avatar-img" id="avatar-preview"
+             style="display:none; position:absolute; top:0; left:0;">
+      {% endif %}
+      <label class="avatar-upload-btn" for="avatar-file" title="Đổi ảnh đại diện">📷</label>
+    </div>
+
+    <form method="POST" action="{{ url_for('student.upload_avatar') }}"
+          enctype="multipart/form-data" id="avatar-form">
+      <input type="file" id="avatar-file" name="avatar"
+             accept=".png,.jpg,.jpeg,.gif,.webp"
+             onchange="previewAndUpload(this)">
+    </form>
+
+    <div style="font-family:var(--head);font-weight:700;font-size:1.15rem;color:var(--text)">
+      {{ user.full_name }}
+    </div>
+    <div style="color:var(--muted);font-size:.84rem;margin:.2rem 0 .65rem">{{ user.email or '—' }}</div>
+    <span class="badge badge-blue">Sinh viên chính quy</span>
+
+    <div style="margin-top:1.35rem;text-align:left">
+      <div class="info-row">
+        <span class="info-label">Mã số SV</span>
+        <span class="info-val">
+          {{ user.student_code or '—' }}
+          {% if user.cohort %}<span class="badge badge-amber" style="margin-left:.35rem">Khóa {{ user.cohort }}</span>{% endif %}
+        </span>
       </div>
-
-      <!-- Hidden upload form -->
-      <form method="POST" action="{{ url_for('student.upload_avatar') }}"
-            enctype="multipart/form-data" id="avatar-form">
-        <input type="file" id="avatar-file" name="avatar"
-               accept=".png,.jpg,.jpeg,.gif,.webp"
-               onchange="previewAndUpload(this)">
-      </form>
-
-      <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:.2rem">
-        {{ user.full_name }}
+      <div class="info-row">
+        <span class="info-label">Tài khoản</span>
+        <span class="info-val">{{ user.username }}</span>
       </div>
-      <div style="color:#4b5563;font-size:.85rem;margin-bottom:.75rem">{{ user.email or '—' }}</div>
-      <span class="badge badge-blue" style="font-size:.75rem">Sinh viên</span>
-
-      <div style="margin-top:1.25rem;text-align:left">
-        <div class="info-row">
-          <span class="info-label">MSSV</span>
-          <span class="info-val">{{ user.student_code or '—' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Điện thoại</span>
-          <span class="info-val">{{ user.phone or '—' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Tham gia</span>
-          <span class="info-val">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Trạng thái</span>
-          <span class="badge badge-green" style="font-size:.72rem">Đang học</span>
-        </div>
+      <div class="info-row">
+        <span class="info-label">Điện thoại</span>
+        <span class="info-val">{{ user.phone or '—' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Ngày tạo hồ sơ</span>
+        <span class="info-val">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '—' }}</span>
+      </div>
+      <div class="info-row" style="margin-bottom:0">
+        <span class="info-label">Tình trạng</span>
+        <span class="badge badge-green">● Đang theo học</span>
       </div>
     </div>
   </div>
 
-  <!-- Right: Edit form -->
+  <!-- Right: Edit Form -->
   <div class="card">
-    <div class="card-title">✏️ Cập nhật thông tin</div>
+    <div class="card-title">✏️ Cập nhật thông tin liên lạc &amp; Bảo mật</div>
     <form method="POST" action="{{ url_for('student.profile') }}">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="grid-2col">
         <div class="form-group">
-          <label class="form-label">Họ và tên</label>
-          <input class="form-control" type="text" value="{{ user.full_name }}"
-                 disabled style="opacity:.6;cursor:not-allowed;background:#f3f4f6">
+          <label class="form-label">Họ và tên sinh viên</label>
+          <input class="form-control" type="text" value="{{ user.full_name }}" disabled>
         </div>
         <div class="form-group">
-          <label class="form-label">MSSV</label>
-          <input class="form-control" type="text" value="{{ user.student_code or '—' }}"
-                 disabled style="opacity:.6;cursor:not-allowed;background:#f3f4f6">
+          <label class="form-label">Mã số sinh viên (MSSV)</label>
+          <input class="form-control" type="text" value="{{ user.student_code or '—' }}" disabled>
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
+          <label class="form-label">Địa chỉ Email</label>
           <input class="form-control" type="email" name="email"
-                 value="{{ user.email or '' }}" placeholder="Nhập email mới">
+                 value="{{ user.email or '' }}" placeholder="Nhập địa chỉ email cá nhân">
         </div>
         <div class="form-group">
           <label class="form-label">Số điện thoại</label>
           <input class="form-control" type="text" name="phone"
-                 value="{{ user.phone or '' }}" placeholder="Nhập số điện thoại">
+                 value="{{ user.phone or '' }}" placeholder="Nhập số điện thoại di động">
         </div>
       </div>
 
-      <div style="border-top:1px solid #e5e7eb;margin:1.5rem 0;padding-top:1.5rem">
-        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:.95rem;
-                    margin-bottom:1rem;color:#111827">🔑 Đổi mật khẩu</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div style="border-top:1px solid var(--border);margin:1.5rem 0;padding-top:1.4rem">
+        <div style="font-family:var(--head);font-weight:700;font-size:.95rem;margin-bottom:1rem;color:var(--text)">🔑 Thay đổi mật khẩu đăng nhập</div>
+        <div class="grid-2col">
           <div class="form-group">
-            <label class="form-label">Mật khẩu mới</label>
-            <input class="form-control" type="password" name="new_password"
-                   placeholder="Để trống nếu không đổi"
-                   style="letter-spacing:.12em;color:#000">
+            <label class="form-label">Mật khẩu mới (tối thiểu 6 ký tự)</label>
+            <input class="form-control" type="password" name="new_password" placeholder="Để trống nếu không đổi">
           </div>
           <div class="form-group">
-            <label class="form-label">Xác nhận mật khẩu</label>
-            <input class="form-control" type="password" name="confirm_password"
-                   placeholder="Nhập lại mật khẩu mới"
-                   style="letter-spacing:.12em;color:#000">
+            <label class="form-label">Xác nhận mật khẩu mới</label>
+            <input class="form-control" type="password" name="confirm_password" placeholder="Nhập lại mật khẩu mới">
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+
+      <button type="submit" class="btn btn-primary">💾 Lưu thay đổi hồ sơ</button>
     </form>
   </div>
 
@@ -138,13 +155,11 @@
 function previewAndUpload(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert('File quá lớn! Tối đa 5MB.');
+  if (file.size > 5 * 1024 * 1024) {
+    eduAlert('Ảnh vượt quá dung lượng tối đa 5MB.', 'Dung lượng quá lớn');
     input.value = '';
     return;
   }
-  // Preview
   const reader = new FileReader();
   reader.onload = e => {
     const preview = document.getElementById('avatar-preview');
@@ -156,7 +171,6 @@ function previewAndUpload(input) {
     if (placeholder) placeholder.style.display = 'none';
   };
   reader.readAsDataURL(file);
-  // Auto-submit
   document.getElementById('avatar-form').submit();
 }
 {% endblock %}

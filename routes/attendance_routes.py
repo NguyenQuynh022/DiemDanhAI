@@ -7,7 +7,7 @@ from models.attendance   import Attendance
 from models.class_model  import Class
 from models.enrollment   import Enrollment
 from models.session      import Session
-from models.face_data    import FaceData
+from models.face_data    import FaceData, FaceSample
 from models.user         import User
 from utils.decorators    import student_required, lecturer_required
 
@@ -31,6 +31,7 @@ def checkin_page():
         .join(Enrollment, Enrollment.class_id == Class.id)
         .filter(
             Enrollment.student_id == sid,
+            Enrollment.status     == 'enrolled',
             Session.session_date  == today,
             Session.status.in_(['scheduled', 'ongoing']),
         )
@@ -38,7 +39,10 @@ def checkin_page():
         .all()
     )
 
-    has_face = FaceData.query.filter_by(student_id=sid).first() is not None
+    has_face = False
+    face_rec = FaceData.query.filter_by(student_id=sid).first()
+    if face_rec and face_rec.embedding_model == 'sface_onnx_128d':
+        has_face = True
     checked_sessions = set(
         a.session_id for a in
         Attendance.query.filter_by(student_id=sid, session_date=today).all()
@@ -49,6 +53,7 @@ def checkin_page():
     return render_template('student/checkin.html',
         sessions_today   = sessions_today,
         has_face         = has_face,
+        face_rec         = face_rec,
         checked_sessions = checked_sessions,
         backend_info     = get_backend_info(),
         today            = today,
@@ -59,15 +64,25 @@ def checkin_page():
 @login_required
 @student_required
 def checkin_submit():
-    from services.face_service import decode_image, encode_face, compare_faces
+    from services.face_service import (
+        decode_image,
+        verify_liveness_sequence,
+        verify_student_identity,
+        append_attendance_ai_log_csv,
+    )
 
-    data       = request.get_json()
-    image_b64  = data.get('image')
-    session_id = data.get('session_id')
-    class_id   = data.get('class_id')
+    data           = request.get_json() or {}
+    frames_b64     = data.get('frames') or []
+    single_img     = data.get('image')
+    challenge_mode = data.get('challenge_mode', 'head_turn')
+    session_id     = data.get('session_id')
+    class_id       = data.get('class_id')
 
-    if not all([image_b64, session_id, class_id]):
-        return jsonify({'ok': False, 'msg': 'Thiếu dữ liệu'}), 400
+    if not frames_b64 and single_img:
+        frames_b64 = [single_img]
+
+    if not session_id or not class_id or not frames_b64:
+        return jsonify({'ok': False, 'msg': 'Thiếu dữ liệu khung hình trực tiếp hoặc mã buổi học.'}), 400
 
     sid = current_user.id
 
@@ -76,12 +91,13 @@ def checkin_submit():
         student_id=sid, class_id=class_id, status='enrolled'
     ).first()
     if not enroll:
-        return jsonify({'ok': False, 'msg': 'Bạn không thuộc lớp này'}), 403
+        return jsonify({'ok': False, 'msg': 'Bạn không thuộc lớp học phần này.'}), 403
 
     # 2. Buổi học hợp lệ và đang ONGOING?
     sess = Session.query.get(session_id)
-    if not sess or sess.class_id != int(class_id):
-        return jsonify({'ok': False, 'msg': 'Buổi học không hợp lệ'}), 400
+    cls  = Class.query.get(class_id)
+    if not sess or not cls or sess.class_id != int(class_id):
+        return jsonify({'ok': False, 'msg': 'Buổi học không hợp lệ.'}), 400
     if sess.status != 'ongoing':
         return jsonify({
             'ok':  False,
@@ -96,35 +112,73 @@ def checkin_submit():
     if existing:
         return jsonify({
             'ok':     False,
-            'msg':    'Bạn đã điểm danh buổi này rồi',
+            'msg':    'Bạn đã điểm danh buổi này rồi.',
             'status': existing.status,
         }), 400
 
-    # 4. Khuôn mặt đã đăng ký?
+    # 4. Khuôn mặt đã đăng ký trong CSDL MySQL chưa?
     face_data = FaceData.query.filter_by(student_id=sid).first()
     if not face_data:
-        return jsonify({'ok': False, 'msg': 'Chưa đăng ký khuôn mặt'}), 400
+        return jsonify({'ok': False, 'msg': 'Bạn chưa đăng ký dữ liệu khuôn mặt trong CSDL!'}), 400
 
-    # 5. Nhận diện khuôn mặt
+    # 5. Giải mã chuỗi khung hình trực tiếp & Kiểm tra CHỐNG GIẢ MẠO NGƯỜI THẬT (Liveness + Anti-Spoofing)
     try:
-        img_np       = decode_image(image_b64)
-        new_emb, err = encode_face(img_np)
-        if err:
-            return jsonify({'ok': False, 'msg': err}), 400
+        frames_rgb = [decode_image(f) for f in frames_b64[:8]]
     except Exception as e:
-        return jsonify({'ok': False, 'msg': f'Lỗi xử lý ảnh: {e}'}), 400
+        return jsonify({'ok': False, 'msg': f'Lỗi giải mã luồng video: {e}'}), 400
 
-    is_match, score, err = compare_faces(face_data.embedding, new_emb)
-    if err:
-        return jsonify({'ok': False, 'msg': err}), 400
-    if not is_match:
+    live_res = verify_liveness_sequence(frames_rgb, challenge_mode=challenge_mode)
+    if not live_res['is_live']:
+        append_attendance_ai_log_csv(
+            student_id=sid,
+            student_code=current_user.student_code or '',
+            full_name=current_user.full_name,
+            class_name=cls.class_name,
+            session_id=sess.id,
+            cosine_score=0.0,
+            model_prob=0.0,
+            liveness_score=live_res['liveness_score'],
+            accepted=False,
+            note=f"SPOOF_BLOCKED: {live_res['reason']}",
+        )
         return jsonify({
-            'ok':    False,
-            'msg':   f'Không nhận diện được (độ khớp: {score:.1%})',
-            'score': float(score),
+            'ok':       False,
+            'msg':      live_res['reason'],
+            'liveness': live_res['liveness_score'],
+            'spoof':    True,
         }), 400
 
-    # ── Ghi điểm danh ────────────────────────────────────────────
+    # 6. Xác thực danh tính bằng Model AI đã train (.pkl từ .csv) + Vector mẫu CSDL MySQL
+    id_res = verify_student_identity(
+        student_id=sid,
+        probe_embedding=live_res['mean_embedding'],
+        stored_db_bytes=face_data.embedding,
+    )
+    if id_res.get('err'):
+        return jsonify({'ok': False, 'msg': id_res['err']}), 400
+
+    if not id_res['is_match']:
+        append_attendance_ai_log_csv(
+            student_id=sid,
+            student_code=current_user.student_code or '',
+            full_name=current_user.full_name,
+            class_name=cls.class_name,
+            session_id=sess.id,
+            cosine_score=id_res['cosine_score'],
+            model_prob=id_res['model_prob'],
+            liveness_score=live_res['liveness_score'],
+            accepted=False,
+            note=id_res.get('reject_msg') or 'IDENTITY_MISMATCH',
+        )
+        return jsonify({
+            'ok':       False,
+            'msg':      id_res.get('reject_msg') or f"Không nhận diện đúng khuôn mặt (Độ khớp: {id_res['display_score']:.1%})",
+            'score':    id_res['display_score'],
+            'liveness': live_res['liveness_score'],
+        }), 400
+
+    # ── 7. Ghi điểm danh vào CSDL MySQL & File CSV Nhật ký AI ────────────────
+    final_score = id_res['display_score']
     db.session.add(Attendance(
         student_id   = sid,
         class_id     = int(class_id),
@@ -133,14 +187,30 @@ def checkin_submit():
         status       = 'present',
         checkin_time = datetime.utcnow(),
         method       = 'face',
-        face_score   = score,
+        face_score   = final_score,
+        note         = f"SFace128D cos={id_res['cosine_score']:.3f} svm={id_res['model_prob']:.2f} live={live_res['liveness_score']:.2f}",
     ))
     db.session.commit()
+
+    append_attendance_ai_log_csv(
+        student_id=sid,
+        student_code=current_user.student_code or '',
+        full_name=current_user.full_name,
+        class_name=cls.class_name,
+        session_id=sess.id,
+        cosine_score=id_res['cosine_score'],
+        model_prob=id_res['model_prob'],
+        liveness_score=live_res['liveness_score'],
+        accepted=True,
+        note='VERIFIED_LIVE_HUMAN',
+    )
+
     return jsonify({
-        'ok':    True,
-        'msg':   f'Điểm danh thành công! Độ khớp: {score:.1%}',
-        'score': float(score),
-        'time':  datetime.now().strftime('%H:%M:%S'),
+        'ok':       True,
+        'msg':      f"Điểm danh người thật thành công! Độ khớp AI: {final_score:.1%} · Liveness: {live_res['liveness_score']:.0%}",
+        'score':    final_score,
+        'liveness': live_res['liveness_score'],
+        'time':     datetime.now().strftime('%H:%M:%S'),
     })
 
 
@@ -190,10 +260,16 @@ def student_session_status(session_id):
 @login_required
 @student_required
 def register_face_page():
-    has_face = FaceData.query.filter_by(student_id=current_user.id).first() is not None
+    sid = current_user.id
+    face_rec = FaceData.query.filter_by(student_id=sid).first()
+    has_face = bool(face_rec and face_rec.embedding_model == 'sface_onnx_128d')
+    sample_count = FaceSample.query.filter_by(student_id=sid).count()
     from services.face_service import get_backend_info
     return render_template('student/register_face.html',
-        has_face=has_face, backend_info=get_backend_info()
+        has_face=has_face,
+        face_rec=face_rec,
+        sample_count=sample_count,
+        backend_info=get_backend_info(),
     )
 
 
@@ -201,37 +277,138 @@ def register_face_page():
 @login_required
 @student_required
 def register_face_submit():
-    from services.face_service import decode_image, encode_face, get_backend_info
+    """
+    Đăng ký sinh trắc học đa góc mặt (Multi-Angle Live Enrollment):
+      1. Nhận chuỗi 5 khung hình sống (Chính diện, Hơi nghiêng trái, Hơi nghiêng phải, Cười nhẹ / Biểu cảm tự nhiên).
+      2. Kiểm tra Liveness & Anti-Spoofing (chặn tuyệt đối đăng ký bằng ảnh chụp/điện thoại!).
+      3. Lưu đầy đủ từng vector mẫu 128D vào bảng `face_samples` + vector trung tâm vào `face_data` trong MySQL.
+      4. Đồng bộ ngay ra `face_embeddings.csv` & `face_registry.csv` và TỰ ĐỘNG TRAIN lại Model AI `face_classifier.pkl`!
+    """
+    import pickle
+    import numpy as np
+    from services.face_service import (
+        decode_image,
+        detect_and_extract_sface,
+        analyze_passive_antispoof,
+        verify_liveness_sequence,
+        train_face_recognition_model,
+    )
 
-    data      = request.get_json()
-    image_b64 = data.get('image')
-    if not image_b64:
-        return jsonify({'ok': False, 'msg': 'Không nhận được ảnh'}), 400
+    data       = request.get_json() or {}
+    frames_b64 = data.get('frames') or []
+    poses      = data.get('poses') or []
+    single_img = data.get('image')
+
+    if not frames_b64 and single_img:
+        frames_b64 = [single_img]
+        poses = ['frontal']
+
+    if not frames_b64:
+        return jsonify({'ok': False, 'msg': 'Không nhận được dữ liệu khung hình từ camera.'}), 400
 
     try:
-        img_np      = decode_image(image_b64)
-        emb_bytes, err = encode_face(img_np)
-        if err:
-            return jsonify({'ok': False, 'msg': err}), 400
+        frames_rgb = [decode_image(b64) for b64 in frames_b64[:8]]
     except Exception as e:
-        return jsonify({'ok': False, 'msg': f'Lỗi xử lý ảnh: {e}'}), 400
+        return jsonify({'ok': False, 'msg': f'Lỗi xử lý khung hình: {e}'}), 400
 
-    info     = get_backend_info()
-    sid      = current_user.id
+    # Nếu gửi từ 3 khung hình trở lên -> chạy kiểm định Liveness người thật nghiêm ngặt
+    liveness_score = 0.90
+    if len(frames_rgb) >= 3:
+        live_check = verify_liveness_sequence(frames_rgb, challenge_mode='auto')
+        if not live_check['is_live']:
+            return jsonify({'ok': False, 'msg': live_check['reason']}), 400
+        liveness_score = live_check['liveness_score']
+
+    extracted_samples = []
+    for idx, frm in enumerate(frames_rgb):
+        emb, meta, err = detect_and_extract_sface(frm)
+        if err or emb is None:
+            return jsonify({'ok': False, 'msg': f'Mẫu góc chụp #{idx + 1}: {err}'}), 400
+        p_score, warns = analyze_passive_antispoof(frm, meta)
+        if p_score < 0.50:
+            return jsonify({
+                'ok': False,
+                'msg': f'Mẫu #{idx + 1} không đạt chuẩn người thật: {warns[0] if warns else "Nghi ngờ ảnh tĩnh/màn hình"}',
+            }), 400
+        pose_lbl = poses[idx] if idx < len(poses) else f'angle_{idx + 1}'
+        extracted_samples.append((pose_lbl, emb, float(meta['det_score']), p_score))
+
+    # Đảm bảo tất cả các góc chụp đều thuộc về CÙNG 1 NGƯỜI đang đăng ký
+    ref_vec = extracted_samples[0][1]
+    for idx, (_pl, vec, _ds, _ps) in enumerate(extracted_samples[1:], start=2):
+        if float(np.dot(ref_vec, vec)) < 0.50:
+            return jsonify({
+                'ok': False,
+                'msg': f'Mẫu góc #{idx} không đồng nhất với khuôn mặt đầu tiên. Vui lòng chỉ để 1 mình bạn trước camera!',
+            }), 400
+
+    sid = current_user.id
+    # Kiểm tra chống trùng lặp: Không cho phép 1 khuôn mặt đăng ký hộ cho tài khoản sinh viên khác!
+    other_faces = FaceData.query.filter(
+        FaceData.student_id != sid,
+        FaceData.embedding_model == 'sface_onnx_128d',
+    ).all()
+    mean_vec = np.mean(np.stack([x[1] for x in extracted_samples], axis=0), axis=0).astype(np.float32)
+    mean_vec /= max(1e-8, float(np.linalg.norm(mean_vec)))
+
+    for ofd in other_faces:
+        try:
+            ovec = np.asarray(pickle.loads(ofd.embedding), dtype=np.float32).reshape(-1)
+            if ovec.shape[0] == 128:
+                sim_other = float(np.dot(mean_vec, ovec / max(1e-8, float(np.linalg.norm(ovec)))))
+                if sim_other >= 0.62:
+                    return jsonify({
+                        'ok': False,
+                        'msg': '🚫 Khuôn mặt này đã được đăng ký cho một mã sinh viên khác trên hệ thống! Nghiêm cấm đăng ký hộ.',
+                    }), 400
+        except Exception:
+            continue
+
+    # 1. Lưu toàn bộ các mẫu góc mặt vào bảng `face_samples` trong CSDL MySQL
+    FaceSample.query.filter_by(student_id=sid).delete(synchronize_session=False)
+    for pose_lbl, vec, det_sc, _ps in extracted_samples:
+        db.session.add(FaceSample(
+            student_id=sid,
+            pose_label=pose_lbl,
+            embedding=pickle.dumps(vec),
+            quality_score=det_sc,
+        ))
+
+    # 2. Lưu vector trung tâm chuẩn 128D vào bảng `face_data` trong CSDL MySQL
+    avg_det_conf = float(np.mean([x[2] for x in extracted_samples]))
     existing = FaceData.query.filter_by(student_id=sid).first()
     if existing:
-        existing.embedding       = emb_bytes
-        existing.embedding_model = info['backend']
-        existing.image_count     = (existing.image_count or 0) + 1
+        existing.embedding       = pickle.dumps(mean_vec)
+        existing.embedding_model = 'sface_onnx_128d'
+        existing.image_count     = len(extracted_samples)
+        existing.confidence      = round(avg_det_conf, 4)
+        existing.liveness_score  = round(liveness_score, 4)
+        existing.is_trained      = False
         existing.updated_at      = datetime.utcnow()
     else:
         db.session.add(FaceData(
             student_id      = sid,
-            embedding       = emb_bytes,
-            embedding_model = info['backend'],
+            embedding       = pickle.dumps(mean_vec),
+            embedding_model = 'sface_onnx_128d',
+            image_count     = len(extracted_samples),
+            confidence      = round(avg_det_conf, 4),
+            liveness_score  = round(liveness_score, 4),
+            is_trained      = False,
         ))
     db.session.commit()
-    return jsonify({'ok': True, 'msg': 'Đăng ký khuôn mặt thành công!'})
+
+    # 3. Xuất đồng bộ ra `face_embeddings.csv` + `face_registry.csv` và Train lại Model AI ngay lập tức!
+    train_info = train_face_recognition_model()
+
+    return jsonify({
+        'ok': True,
+        'msg': (
+            f'✅ Đã lưu {len(extracted_samples)} góc khuôn mặt vào CSDL MySQL, cập nhật file CSV '
+            f'và huấn luyện xong Model AI (Tổng {train_info.get("num_students", 1)} SV · Liveness {liveness_score:.0%})!'
+        ),
+        'samples_saved': len(extracted_samples),
+        'train_info': train_info,
+    })
 
 
 # ═══════════════════════════════════════════════════════════════════

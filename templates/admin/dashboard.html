@@ -1,0 +1,128 @@
+{% extends "admin/layout.html" %}
+{% block title %}Bảng điều khiển Quản trị — EduPortal{% endblock %}
+{% block page_title %}🛡️ Trung tâm Quản trị Đào tạo &amp; Cấp phát Tài khoản{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="page-hero">
+  <div>
+    <div class="page-hero-title">Phòng Đào tạo — Quản trị Hệ thống 👋</div>
+    <div class="page-hero-sub">
+      Quản lý tập trung toàn bộ tài khoản Giảng viên, Sinh viên (chặn tự đăng ký) và xuất bản Thông báo lên Cổng thông tin Đào tạo.
+    </div>
+  </div>
+  <div class="page-hero-actions">
+    <a href="{{ url_for('admin.courses_manage') }}" class="btn-glass">📚 Mở Đăng ký tín chỉ &amp; Xếp lịch</a>
+    <a href="{{ url_for('admin.users_list') }}#create-account" class="btn-glass">➕ Cấp tài khoản GV / SV</a>
+    <a href="{{ url_for('admin.announcements_list') }}#post-notice" class="btn-glass">📢 Đăng thông báo mới</a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="stats-grid">
+  <a href="{{ url_for('admin.users_list', role='lecturer') }}" class="stat-card">
+    <div class="stat-icon indigo">👨‍🏫</div>
+    <div>
+      <div class="stat-val">{{ total_lecturers }}</div>
+      <div class="stat-lbl">Tài khoản Giảng viên</div>
+    </div>
+  </a>
+  <a href="{{ url_for('admin.users_list', role='student') }}" class="stat-card">
+    <div class="stat-icon blue">🎓</div>
+    <div>
+      <div class="stat-val">{{ total_students }}</div>
+      <div class="stat-lbl">Tài khoản Sinh viên</div>
+    </div>
+  </a>
+  <a href="{{ url_for('admin.announcements_list') }}" class="stat-card">
+    <div class="stat-icon amber">📢</div>
+    <div>
+      <div class="stat-val">{{ total_anns }}</div>
+      <div class="stat-lbl">Thông báo trên Cổng</div>
+    </div>
+  </a>
+  <div class="stat-card">
+    <div class="stat-icon green">🏫</div>
+    <div>
+      <div class="stat-val">{{ total_classes }}</div>
+      <div class="stat-lbl">Tổng lớp học phần</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2col" style="align-items:start">
+
+  <!-- Latest Announcements -->
+  <div class="card">
+    <div class="card-title">
+      📢 Thông báo mới đăng trên Cổng
+      <a href="{{ url_for('admin.announcements_list') }}" class="btn btn-primary btn-sm" style="margin-left:auto">+ Đăng tin mới</a>
+    </div>
+    {% if recent_anns %}
+    <div style="display:flex;flex-direction:column;gap:.6rem">
+      {% for a in recent_anns %}
+      <div style="padding:.75rem .95rem;border:1px solid var(--border);border-left:4px solid {% if a.category=='finance' %}#0ea5e9{% else %}#f59e0b{% endif %};border-radius:10px;background:var(--surface2)">
+        <div style="display:flex;justify-content:space-between;gap:.5rem;margin-bottom:.25rem">
+          <span class="badge {% if a.category=='finance' %}badge-blue{% else %}badge-amber{% endif %}">{{ a.category_label }}</span>
+          <span style="font-size:.75rem;color:var(--muted)">{{ a.created_at.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <a href="{{ url_for('auth.announcement_detail', ann_id=a.id) }}" target="_blank" style="font-weight:600;font-size:.88rem;color:var(--text);text-decoration:none">
+          {{ a.title }}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div class="empty"><div class="empty-icon">📢</div><div class="empty-text">Chưa có thông báo nào</div></div>
+    {% endif %}
+  </div>
+
+  <!-- Recently Provisioned Accounts -->
+  <div class="card">
+    <div class="card-title">
+      👥 Tài khoản GV &amp; SV cấp gần đây
+      <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline btn-sm" style="margin-left:auto">Quản lý tất cả →</a>
+    </div>
+    {% if recent_users %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Họ và tên</th>
+            <th>Tài khoản</th>
+            <th>Vai trò</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td>
+              <div style="font-weight:600;color:var(--text)">{{ u.full_name }}</div>
+              {% if u.student_code %}<div style="font-size:.73rem;color:var(--muted)">MSSV: {{ u.student_code }}</div>{% endif %}
+            </td>
+            <td><code>{{ u.username }}</code></td>
+            <td>
+              {% if u.role == 'lecturer' %}
+                <span class="badge badge-purple">Giảng viên</span>
+              {% else %}
+                <span class="badge badge-blue">Sinh viên</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.status == 'active' %}
+                <span class="badge badge-green">Hoạt động</span>
+              {% else %}
+                <span class="badge badge-red">Đã khóa</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

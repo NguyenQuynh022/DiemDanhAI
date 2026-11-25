@@ -5,16 +5,18 @@
 .login-wrap {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 1fr 480px;
+    grid-template-columns: 1fr 1fr;
+    background: #f8fafc;
 }
 
-/* ── Left panel ── */
+/* ── Left Hero Showcase ── */
 .login-hero {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+    background: linear-gradient(135deg, #0b132b 0%, #1e1b4b 48%, #312e81 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 4rem;
+    align-items: center;
+    padding: 4.5rem;
     position: relative;
     overflow: hidden;
 }
@@ -22,257 +24,263 @@
     content: '';
     position: absolute; inset: 0;
     background:
-        radial-gradient(ellipse 60% 50% at 30% 40%, #3b82f618, transparent),
-        radial-gradient(ellipse 40% 60% at 80% 70%, #6366f112, transparent);
+        radial-gradient(circle at 20% 25%, rgba(59,130,246,.28), transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(139,92,246,.25), transparent 45%);
 }
 .hero-grid {
     position: absolute; inset: 0;
     background-image:
-        linear-gradient(rgba(59,130,246,.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,.07) 1px, transparent 1px);
-    background-size: 48px 48px;
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 46px 46px;
 }
-.hero-content { position: relative; z-index: 1; }
+.hero-content { position: relative; z-index: 1; max-width: 540px; width: 100%; }
 .hero-badge {
-    display: inline-flex; align-items: center; gap: .5rem;
-    background: #3b82f615; border: 1px solid #3b82f630;
-    color: #93c5fd; font-size: .75rem; font-weight: 600;
-    padding: .35rem .9rem; border-radius: 99px;
+    display: inline-flex; align-items: center; gap: .55rem;
+    background: rgba(99,102,241,.2); border: 1px solid rgba(165,180,252,.3);
+    color: #c7d2fe; font-size: .78rem; font-weight: 700;
+    padding: .45rem 1.05rem; border-radius: 99px;
     letter-spacing: .08em; text-transform: uppercase;
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
 }
-.hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hero-badge span { width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #38bdf8; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 .hero-title {
     font-family: var(--font-head);
-    font-size: clamp(2rem, 3vw, 3rem);
+    font-size: clamp(2.4rem, 3.4vw, 3.35rem);
     font-weight: 700;
     line-height: 1.15;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.35rem;
+    color: #fff;
+    letter-spacing: -0.025em;
 }
 .hero-title span {
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    background: linear-gradient(135deg, #60a5fa, #c084fc);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-.hero-desc { color: rgba(255,255,255,0.85); font-size: 1rem; line-height: 1.7; max-width: 440px; }
-.hero-features { margin-top: 3rem; display: flex; flex-direction: column; gap: 1rem; }
-.feature-item {
-    display: flex; align-items: center; gap: .875rem;
-    color: rgba(255,255,255,0.75); font-size: .9rem;
-}
-.feature-icon {
-    width: 36px; height: 36px; border-radius: .5rem;
-    background: #3b82f610; border: 1px solid #3b82f625;
-    display: grid; place-items: center; font-size: 1rem; flex-shrink: 0;
-}
+.hero-desc { color: rgba(226,232,240,0.88); font-size: 1.08rem; line-height: 1.75; }
 
-/* ── Right panel ── */
+/* ── Right Form Panel (Wide & Spacious) ── */
 .login-form-panel {
     background: #ffffff;
     border-left: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 3rem 2.5rem;
+    align-items: center;
+    padding: 4rem 3.5rem;
+    box-shadow: -12px 0 40px rgba(15,23,42,.05);
 }
-.form-logo {
-    display: flex; align-items: center; gap: .75rem;
+.login-form-box {
+    width: 100%;
+    max-width: 520px;
+}
+
+.form-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 2.5rem;
 }
-.logo-icon {
-    width: 42px; height: 42px; border-radius: .75rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    display: grid; place-items: center; font-size: 1.2rem;
+.form-logo {
+    display: flex; align-items: center; gap: .85rem;
 }
-.logo-text { font-family: var(--font-head); font-weight: 700; font-size: 1.2rem; color: #ffffff; }
-.logo-text span { color: #93c5fd; }
+.logo-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    display: grid; place-items: center; font-size: 1.4rem;
+    box-shadow: 0 6px 18px rgba(37,99,235,.3);
+}
+.logo-text { font-family: var(--font-head); font-weight: 700; font-size: 1.45rem; color: #0f172a; letter-spacing: -0.02em; }
+.logo-text span { color: #2563eb; }
 
-.form-heading { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; color: #111827; }
-.form-sub     { color: #4b5563; font-size: .9rem; margin-bottom: 2rem; }
+.back-portal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1rem;
+    border-radius: 99px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: .85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+}
+.back-portal-link:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
 
-.field { margin-bottom: 1.25rem; }
+.form-heading { font-family: var(--font-head); font-size: 1.85rem; font-weight: 700; margin-bottom: .45rem; color: #0f172a; letter-spacing: -0.02em; }
+.form-sub     { color: #64748b; font-size: 1rem; margin-bottom: 2.25rem; }
+
+.field { margin-bottom: 1.45rem; }
 .field label {
-    display: block; font-size: .8rem; font-weight: 600;
-    color: #374151; text-transform: uppercase; letter-spacing: .06em;
-    margin-bottom: .5rem;
+    display: block; font-size: .82rem; font-weight: 700;
+    color: #334155; text-transform: uppercase; letter-spacing: .06em;
+    margin-bottom: .55rem;
 }
 .input-wrap { position: relative; }
 .input-wrap .icon {
-    position: absolute; left: .9rem; top: 50%; transform: translateY(-50%);
-    color: var(--muted); pointer-events: none; font-size: 1rem;
+    position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%);
+    color: #94a3b8; pointer-events: none; font-size: 1.1rem;
 }
 .field input[type="text"],
 .field input[type="password"] {
-    width: 100%; padding: .75rem .9rem .75rem 2.6rem;
-    background: #ffffff; border: 1px solid #d1d9e0;
-    border-radius: .5rem; color: #111827;
-    font-family: var(--font-main); font-size: .95rem;
-    transition: border-color .2s, box-shadow .2s;
+    width: 100%; padding: .98rem 1.1rem .98rem 3rem;
+    background: #f8fafc; border: 1.5px solid #cbd5e1;
+    border-radius: 12px; color: #0f172a;
+    font-family: var(--font-main); font-size: 1.02rem;
+    transition: all .2s;
     outline: none;
 }
-.field input::placeholder { color: #9ca3af; }
+.field input::placeholder { color: #94a3b8; }
 .field input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px #3b82f620;
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37,99,235,.14);
 }
 
 .toggle-pw {
-    position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
-    background: none; border: none; color: #6b7280; cursor: pointer;
-    font-size: 1rem; padding: .2rem;
-    transition: color .2s;
+    position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: #64748b; cursor: pointer;
+    font-size: 1.05rem; padding: .3rem; border-radius: 8px;
 }
-.toggle-pw:hover { color: var(--text); }
+.toggle-pw:hover { color: #0f172a; background: #f1f5f9; }
 
 .remember-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.75rem; font-size: .875rem;
+    margin-bottom: 1.85rem; font-size: .92rem;
 }
-.remember-row label { display: flex; align-items: center; gap: .5rem; cursor: pointer; color: #4b5563; }
-.remember-row input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+.remember-row label { display: flex; align-items: center; gap: .55rem; cursor: pointer; color: #475569; font-weight: 500; }
+.remember-row input[type="checkbox"] { accent-color: #2563eb; width: 17px; height: 17px; }
 
 .btn-login {
-    width: 100%; padding: .875rem;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border: none; border-radius: .5rem;
+    width: 100%; padding: 1.05rem;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    border: none; border-radius: 12px;
     color: #fff; font-family: var(--font-head);
-    font-size: 1rem; font-weight: 600;
-    cursor: pointer; letter-spacing: .02em;
-    transition: opacity .2s, transform .1s;
-    position: relative; overflow: hidden;
+    font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; letter-spacing: .01em;
+    box-shadow: 0 8px 22px rgba(37,99,235,.3);
+    transition: transform .15s, box-shadow .15s, filter .15s;
 }
-.btn-login:hover  { opacity: .9; }
+.btn-login:hover  { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(37,99,235,.38); filter: brightness(1.04); }
 .btn-login:active { transform: scale(.99); }
-.btn-login::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
-    transform: translateX(-100%); transition: transform .4s;
-}
-.btn-login:hover::after { transform: translateX(100%); }
 
-.divider { display: flex; align-items: center; gap: .75rem; margin: 1.5rem 0; }
-.divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
-.divider span { color: #6b7280; font-size: .8rem; white-space: nowrap; }
+.divider { display: flex; align-items: center; gap: .85rem; margin: 2rem 0 1.15rem; }
+.divider hr { flex: 1; border: none; border-top: 1px solid #e2e8f0; }
+.divider span { color: #94a3b8; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
-.demo-accounts { display: flex; flex-direction: column; gap: .5rem; }
+.demo-accounts { display: flex; flex-direction: column; gap: .65rem; }
 .demo-btn {
-    padding: .6rem 1rem; border-radius: .4rem;
-    border: 1px solid #d1d9e0;
-    background: #f9fafb; color: #374151;
-    font-family: var(--font-main); font-size: .8rem;
+    padding: .82rem 1.15rem; border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc; color: #334155;
+    font-family: var(--font-main); font-size: .9rem; font-weight: 500;
     cursor: pointer; text-align: left;
-    transition: background .2s, color .2s, border-color .2s;
+    transition: all .16s;
     display: flex; justify-content: space-between; align-items: center;
 }
-.demo-btn:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+.demo-btn:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; transform: translateX(3px); }
 .demo-tag {
-    font-size: .7rem; font-weight: 600; padding: .2rem .5rem;
-    border-radius: 99px; text-transform: uppercase; letter-spacing: .05em;
+    font-size: .72rem; font-weight: 700; padding: .24rem .7rem;
+    border-radius: 99px; text-transform: uppercase; letter-spacing: .04em;
 }
-.tag-sv  { background: #15803d; color: #ffffff; }
-.tag-gv  { background: #1d4ed8; color: #ffffff; }
-.tag-adm { background: #6d28d9; color: #ffffff; }
+.tag-sv  { background: #dcfce7; color: #15803d; }
+.tag-gv  { background: #e0e7ff; color: #4338ca; }
+.tag-adm { background: #ffe4e6; color: #be123c; }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .login-wrap { grid-template-columns: 1fr; }
     .login-hero  { display: none; }
+    .login-form-panel { border-left: none; box-shadow: none; padding: 2.5rem 1.5rem; }
 }
 {% endblock %}
 
 {% block content %}
 <div class="login-wrap">
 
-    <!-- Hero Panel -->
+    <!-- Left Hero Panel (Clean & Minimal) -->
     <div class="login-hero">
         <div class="hero-grid"></div>
         <div class="hero-content">
-            <div class="hero-badge"><span></span>Hệ thống quản lý đào tạo</div>
+            <div class="hero-badge"><span></span>Hệ thống đào tạo thông minh</div>
             <h1 class="hero-title">
-                Quản lý học tập<br><span>thông minh hơn</span>
+                Quản lý giảng dạy &amp;<br><span>Điểm danh AI thông minh</span>
             </h1>
             <p class="hero-desc">
-                Cổng thông tin tập trung cho sinh viên và giảng viên — lịch học, điểm số,
-                điểm danh AI và thông báo theo thời gian thực.
+                Cổng thông tin tập trung kết nối Giảng viên và Sinh viên — đồng bộ thời khóa biểu,
+                điểm danh nhận diện khuôn mặt thời gian thực, quản lý điểm số và trợ lý ảo EduBot AI.
             </p>
-            <p style="color:#94a3b8;font-size:.8rem;margin-top:.75rem;background:#ffffff10;border:1px solid #ffffff15;padding:.5rem .9rem;border-radius:.4rem;display:inline-block">
-                ⚠️ Điểm hợp lệ từ <strong style="color:#fcd34d">0 đến 10</strong>
-            </p>
-            <div class="hero-features">
-                <div class="feature-item">
-                    <div class="feature-icon">🎓</div>
-                    Xem lịch học và điểm số mọi lúc, mọi nơi
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🤖</div>
-                    Điểm danh tự động bằng nhận diện khuôn mặt AI
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🔔</div>
-                    Thông báo tức thì khi có cập nhật từ giảng viên
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📊</div>
-                    Thống kê chuyên cần và học lực chi tiết
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- Form Panel -->
+    <!-- Wide Right Form Panel -->
     <div class="login-form-panel">
-        <div class="form-logo">
-            <div class="logo-icon">🎓</div>
-            <div class="logo-text">Edu<span>Portal</span></div>
-        </div>
-
-        <h2 class="form-heading">Đăng nhập</h2>
-        <p class="form-sub">Nhập tài khoản được cấp để tiếp tục</p>
-
-        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
-            <div class="field">
-                <label for="username">Tài khoản</label>
-                <div class="input-wrap">
-                    <span class="icon">👤</span>
-                    <input type="text" id="username" name="username"
-                           placeholder="Nhập tên đăng nhập"
-                           value="{{ request.form.get('username', '') }}"
-                           autocomplete="username" required>
+        <div class="login-form-box">
+            <div class="form-top-row">
+                <div class="form-logo">
+                    <div class="logo-icon">🎓</div>
+                    <div class="logo-text">Edu<span>Portal</span></div>
                 </div>
+                <a href="{{ url_for('auth.portal_home') }}" class="back-portal-link">
+                    ← Cổng thông tin
+                </a>
             </div>
 
-            <div class="field">
-                <label for="password">Mật khẩu</label>
-                <div class="input-wrap">
-                    <span class="icon">🔑</span>
-                    <input type="password" id="password" name="password"
-                           placeholder="Nhập mật khẩu"
-                           autocomplete="current-password" required
-                           style="letter-spacing: .15em; font-size: 1rem;">
-                    <button type="button" class="toggle-pw" onclick="togglePw()">👁</button>
+            <h2 class="form-heading">Đăng nhập Hệ thống</h2>
+            <p class="form-sub">Nhập tài khoản của bạn để truy cập không gian làm việc</p>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
+                <div class="field">
+                    <label for="username">Tên đăng nhập</label>
+                    <div class="input-wrap">
+                        <span class="icon">👤</span>
+                        <input type="text" id="username" name="username"
+                               placeholder="Nhập tên đăng nhập..."
+                               value="{{ request.form.get('username', '') }}"
+                               autocomplete="username" required>
+                    </div>
                 </div>
+
+                <div class="field">
+                    <label for="password">Mật khẩu</label>
+                    <div class="input-wrap">
+                        <span class="icon">🔒</span>
+                        <input type="password" id="password" name="password"
+                               placeholder="Nhập mật khẩu..."
+                               autocomplete="current-password" required>
+                        <button type="button" class="toggle-pw" onclick="togglePw()" title="Hiện/Ẩn mật khẩu">👁</button>
+                    </div>
+                </div>
+
+                <div class="remember-row">
+                    <label>
+                        <input type="checkbox" name="remember"> Duy trì đăng nhập trên thiết bị này
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-login">Đăng nhập hệ thống →</button>
+            </form>
+
+            <!-- Demo accounts -->
+            <div class="divider"><hr><span>Điền nhanh tài khoản mẫu</span><hr></div>
+            <div class="demo-accounts">
+                <button type="button" class="demo-btn" onclick="fillDemo('nguyen.van.an','sv123456')">
+                    <span><strong>nguyen.van.an</strong> / sv123456</span>
+                    <span class="demo-tag tag-sv">Sinh viên</span>
+                </button>
+                <button type="button" class="demo-btn" onclick="fillDemo('gv_nguyenvan','gv123456')">
+                    <span><strong>gv_nguyenvan</strong> / gv123456</span>
+                    <span class="demo-tag tag-gv">Giảng viên</span>
+                </button>
+                <button type="button" class="demo-btn" onclick="fillDemo('admin','admin123')">
+                    <span><strong>admin</strong> / admin123</span>
+                    <span class="demo-tag tag-adm">Quản trị Admin</span>
+                </button>
             </div>
-
-            <div class="remember-row">
-                <label>
-                    <input type="checkbox" name="remember"> Ghi nhớ đăng nhập
-                </label>
-            </div>
-
-            <button type="submit" class="btn-login">Đăng nhập →</button>
-        </form>
-
-        <!-- Demo accounts -->
-        <div class="divider"><hr><span>Tài khoản demo</span><hr></div>
-        <div class="demo-accounts">
-            <button class="demo-btn" onclick="fillDemo('sv_tranthib','sv123456')">
-                <span>sv_tranthib / sv123456</span>
-                <span class="demo-tag tag-sv">Sinh viên</span>
-            </button>
-            <button class="demo-btn" onclick="fillDemo('gv_nguyenvan','gv123456')">
-                <span>gv_nguyenvan / gv123456</span>
-                <span class="demo-tag tag-gv">Giảng viên</span>
-            </button>
-
         </div>
     </div>
 

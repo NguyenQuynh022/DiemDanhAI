@@ -1,0 +1,81 @@
+{% extends "student/layout.html" %}
+{% block title %}Lịch trình môn học — {{ cls.course_name }}{% endblock %}
+
+{% block content %}
+<div class="x-panel">
+  <div class="x-title">
+    <h2>📅 Lịch trình giảng dạy: {{ cls.course_name }} ({{ cls.class_name }})</h2>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button type="button" class="btn btn-outline btn-sm" onclick="window.print()">🖨️ In lịch trình</button>
+      <a href="{{ url_for('student.all_courses_schedule', semester=cls.semester) }}" class="btn btn-outline btn-sm">🗓️ Thời khóa biểu toàn khóa</a>
+      <a href="{{ url_for('student.dashboard', semester=cls.semester) }}" class="btn btn-primary btn-sm">← Lịch học chi tiết</a>
+    </div>
+  </div>
+
+  <div class="week-alert-green" style="display:flex;gap:1.75rem;flex-wrap:wrap;align-items:center">
+    <span>📚 Mã học phần: <strong>{{ cls.course_code or '—' }}</strong></span>
+    <span>👨‍🏫 Giảng viên: <strong>{{ cls.lecturer.full_name if cls.lecturer else '—' }}</strong></span>
+    <span>🏫 Phòng học: <strong>{{ cls.room or '—' }}</strong></span>
+    <span>🕒 Lịch cố định: <strong>{{ thu_tiet }}</strong></span>
+    <span>📋 Tổng số buổi: <strong>{{ session_rows|length }} buổi</strong></span>
+  </div>
+
+  <div class="vku-table-wrap">
+    <table class="vku-table">
+      <thead>
+        <tr>
+          <th style="width:55px">Buổi</th>
+          <th style="width:95px">Tuần học</th>
+          <th style="width:130px">Ngày học</th>
+          <th style="width:130px">Khung giờ</th>
+          <th style="width:110px">Phòng</th>
+          <th>Trạng thái buổi học</th>
+          <th style="width:150px">Điểm danh của bạn</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if session_rows %}
+          {% for r in session_rows %}
+          {% set s = r.sess %}
+          {% set a = r.att %}
+          <tr {% if s.session_date == today %}style="background:#FEFCE8"{% endif %}>
+            <td><strong>#{{ r.stt }}</strong></td>
+            <td><span class="badge badge-blue">Tuần {{ r.week }}</span></td>
+            <td><strong>{{ s.session_date.strftime('%d/%m/%Y') }}</strong></td>
+            <td>{{ s.start_time.strftime('%H:%M') }} – {{ s.end_time.strftime('%H:%M') }}</td>
+            <td><strong>{{ s.room or cls.room or '—' }}</strong></td>
+            <td>
+              {% if s.status == 'ongoing' %}
+                <span class="badge badge-green">🟢 Đang mở điểm danh</span>
+              {% elif s.status == 'completed' %}
+                <span class="badge badge-gray">✓ Đã học xong</span>
+              {% elif s.status == 'cancelled' %}
+                <span class="badge badge-red">✕ Báo nghỉ</span>
+              {% else %}
+                <span class="badge badge-amber">⏳ Sắp diễn ra</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.status == 'ongoing' and not a %}
+                <a href="{{ url_for('attendance.checkin_page') }}" class="btn-teal-action">Điểm danh ngay</a>
+              {% elif a %}
+                {% if a.status == 'present' %}<span class="badge badge-green">✓ Có mặt</span>
+                {% elif a.status == 'late' %}<span class="badge badge-amber">⏰ Đi trễ</span>
+                {% elif a.status == 'absent' %}<span class="badge badge-red">✕ Vắng</span>
+                {% else %}<span class="badge badge-blue">Có phép</span>{% endif %}
+              {% else %}
+                <span style="color:var(--muted)">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:1.25rem;color:var(--muted)">Chưa có lịch trình buổi học cho lớp này.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

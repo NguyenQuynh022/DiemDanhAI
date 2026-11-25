@@ -1,0 +1,330 @@
+{% extends "admin/layout.html" %}
+{% block title %}Quản lý Đăng ký Tín chỉ & Xếp lịch — Admin{% endblock %}
+{% block page_title %}📚 Quản lý Mở lớp Học phần, Xếp lịch Giảng viên &amp; Đăng ký Tín chỉ{% endblock %}
+
+{% block extra_style %}
+.reg-status-banner {
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.reg-status-banner.open {
+  background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+  border: 1px solid #6EE7B7;
+  border-left: 5px solid #10B981;
+}
+.reg-status-banner.closed {
+  background: linear-gradient(135deg, #FFF1F2, #FFE4E6);
+  border: 1px solid #FDA4AF;
+  border-left: 5px solid #E11D48;
+}
+.workload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.75rem;
+}
+.workload-chip {
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 0.82rem;
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- 1. Semester Selector & Academic Calendar Rule Info -->
+<div class="card" style="margin-bottom:1.25rem;padding:1rem 1.35rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:.85rem;flex-wrap:wrap">
+    <span style="font-weight:700;color:var(--text)">📅 Chọn học kỳ quản lý:</span>
+    <form method="GET" style="margin:0">
+      <select name="semester" class="form-control" style="width:auto;min-width:210px;font-weight:700" onchange="this.form.submit()">
+        {% for sem_id, sem_name, yr, _ in all_semesters|reverse %}
+          <option value="{{ sem_id }}" {% if selected_sem == sem_id %}selected{% endif %}>
+            {{ sem_name }} ({{ yr }}–{{ yr|int + 1 }}) · [{{ sem_id }}]
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+    <span class="badge badge-blue">
+      Khung thời gian {{ selected_sem }}: {{ sem_start.strftime('%d/%m/%Y') }} → {{ sem_end.strftime('%d/%m/%Y') }}
+    </span>
+  </div>
+  <div style="font-size:.8rem;color:var(--muted)">
+    Quy chuẩn năm học: <strong>HK1 (Tháng 8 → Tháng 12)</strong> · <strong>HK2 (Tháng 2 → Tháng 5)</strong> · Học <strong>Thứ 2 → Thứ 6</strong>
+  </div>
+</div>
+
+<!-- 2. Open / Close Credit Registration Control (Strictly Admin-Controlled) -->
+<div class="reg-status-banner {% if reg_cfg.is_active_now %}open{% else %}closed{% endif %}">
+  <div style="flex:1;min-width:280px">
+    <div style="font-size:1.05rem;font-weight:800;color:#0F172A;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      {% if reg_cfg.is_active_now %}
+        🟢 CỔNG ĐĂNG KÝ TÍN CHỈ KỲ {{ selected_sem }} ĐANG MỞ
+      {% elif reg_cfg.is_open %}
+        🕒 ĐÃ LÊN LỊCH MỞ ĐĂNG KÝ KỲ {{ selected_sem }} (CHƯA TRONG KHUNG GIỜ)
+      {% else %}
+        🔒 CỔNG ĐĂNG KÝ TÍN CHỈ KỲ {{ selected_sem }} ĐANG ĐÓNG
+      {% endif %}
+    </div>
+    <div style="font-size:.85rem;color:#334155;margin-top:.3rem">
+      <strong>Trạng thái:</strong> {{ reg_cfg.status_reason }}
+    </div>
+    <div style="font-size:.82rem;color:#475569;margin-top:.2rem">
+      Sinh viên chỉ được đăng ký khi Admin mở cổng (từ <strong>{{ reg_cfg.min_courses }} môn</strong> đến <strong>{{ reg_cfg.max_courses }} môn</strong>, không trùng môn và không trùng lịch học).
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.toggle_registration') }}" style="display:flex;flex-direction:column;gap:.65rem;align-items:flex-end">
+    <input type="hidden" name="semester" value="{{ selected_sem }}">
+
+    <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;justify-content:flex-end">
+      <div style="display:flex;align-items:center;gap:.35rem;background:#fff;padding:.38rem .65rem;border-radius:8px;border:1px solid var(--border-strong);font-size:.8rem">
+        <span style="font-weight:600;color:#334155">Từ:</span>
+        <input type="datetime-local" name="open_from" value="{{ reg_cfg.open_from.strftime('%Y-%m-%dT%H:%M') if reg_cfg.open_from else '' }}" style="border:none;font-family:inherit;font-size:.8rem;outline:none;color:#0F172A">
+        <span style="font-weight:600;color:#334155;margin-left:.25rem">Đến:</span>
+        <input type="datetime-local" name="open_until" value="{{ reg_cfg.open_until.strftime('%Y-%m-%dT%H:%M') if reg_cfg.open_until else '' }}" style="border:none;font-family:inherit;font-size:.8rem;outline:none;color:#0F172A">
+      </div>
+
+      <div style="display:flex;align-items:center;gap:.35rem;background:#fff;padding:.38rem .65rem;border-radius:8px;border:1px solid var(--border-strong);font-size:.8rem">
+        <span>Tối thiểu:</span>
+        <input type="number" name="min_courses" value="{{ reg_cfg.min_courses }}" min="1" max="7" style="width:42px;border:none;font-weight:700;text-align:center;outline:none">
+        <span>môn · Tối đa:</span>
+        <input type="number" name="max_courses" value="{{ reg_cfg.max_courses }}" min="3" max="10" style="width:42px;border:none;font-weight:700;text-align:center;outline:none">
+        <span>môn</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button type="submit" name="action" value="save_window" class="btn btn-outline btn-sm" style="background:#fff">
+        💾 Lưu cấu hình thời gian
+      </button>
+      {% if reg_cfg.is_open %}
+        <button type="submit" name="action" value="close" class="btn btn-danger">🔒 Đóng cổng đăng ký ngay</button>
+      {% else %}
+        <button type="submit" name="action" value="open" class="btn btn-primary" style="background:#059669">🟢 Mở cổng đăng ký tín chỉ</button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- 3. Add Course Section & Smart Lecturer Scheduler -->
+<div class="card" style="margin-bottom:1.35rem">
+  <div class="card-title">
+    ➕ Mở lớp học phần mới &amp; Sắp xếp lịch dạy Giảng viên ({{ selected_sem }})
+    <span style="margin-left:auto;font-size:.78rem;color:var(--muted);font-weight:500">
+      Trung bình 2 tín chỉ/môn · Tự động kiểm tra chống trùng lịch Giảng viên &amp; Phòng học
+    </span>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.create_course_class') }}">
+    <input type="hidden" name="semester" value="{{ selected_sem }}">
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Mã học phần ✱</label>
+        <input type="text" name="course_code" class="form-control" style="text-transform:uppercase;font-weight:700" placeholder="VD: CS801" required>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tên môn học phần ✱</label>
+        <input type="text" name="course_name" class="form-control" placeholder="VD: Phát triển ứng dụng AI" required>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Mã lớp (Trống = Tự đánh số)</label>
+        <input type="text" name="class_name" class="form-control" style="text-transform:uppercase" placeholder="VD: CS801-01">
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Giảng viên phụ trách ✱</label>
+        <select name="lecturer_id" id="sel-lecturer" class="form-control" onchange="suggestOptimalSlot()" required>
+          {% for gv in lecturers %}
+          <option value="{{ gv.id }}">
+            {{ gv.full_name }} ({{ lect_workload[gv.id].count }} lớp)
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Số tín chỉ (TB: 2 TC)</label>
+        <select name="credits" class="form-control">
+          <option value="2" selected>2 tín chỉ (Chuẩn)</option>
+          <option value="3">3 tín chỉ</option>
+          <option value="1">1 tín chỉ</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Thứ học (Thứ 2 → Thứ 6) ✱</label>
+        <select name="day" id="sel-day" class="form-control">
+          <option value="0">Thứ 2</option>
+          <option value="1">Thứ 3</option>
+          <option value="2">Thứ 4</option>
+          <option value="3">Thứ 5</option>
+          <option value="4">Thứ 6</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tiết bắt đầu ✱</label>
+        <select name="tiet_start" id="sel-tiet" class="form-control">
+          <option value="1">Tiết 1 (07:30)</option>
+          <option value="3">Tiết 3 (09:30)</option>
+          <option value="6">Tiết 6 (13:00)</option>
+          <option value="8">Tiết 8 (15:00)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Số tiết / buổi</label>
+        <select name="num_tiet" id="sel-numtiet" class="form-control" onchange="suggestOptimalSlot()">
+          <option value="2" selected>2 tiết / buổi</option>
+          <option value="3">3 tiết / buổi</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Phòng học ✱</label>
+        <input type="text" name="room" id="sel-room" list="room-list" class="form-control" value="P.A101" required>
+        <datalist id="room-list">
+          {% for r in rooms %}<option value="{{ r }}">{% endfor %}
+        </datalist>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Sĩ số tối đa</label>
+        <input type="number" name="max_students" class="form-control" value="45" min="10" max="120">
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.85rem">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <button type="button" class="btn btn-outline btn-sm" onclick="suggestOptimalSlot()">
+          ⚡ Tự gợi ý Thứ / Tiết &amp; Phòng trống hợp lý cho GV
+        </button>
+        <label style="display:flex;align-items:center;gap:.45rem;font-size:.84rem;font-weight:600;color:var(--text-secondary);cursor:pointer">
+          <input type="checkbox" name="auto_schedule" style="width:16px;height:16px;accent-color:var(--accent)">
+          Tự động xếp lịch tối ưu khi lưu
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">➕ Mở lớp &amp; Khởi tạo lịch học</button>
+    </div>
+  </form>
+</div>
+
+<!-- 4. Lecturer Workload Overview -->
+<div class="card" style="margin-bottom:1.35rem">
+  <div class="card-title">👨‍🏫 Phân bổ lịch giảng dạy của Giảng viên trong kỳ {{ selected_sem }}</div>
+  <div class="workload-grid">
+    {% for gv in lecturers %}
+    {% set wl = lect_workload[gv.id] %}
+    <div class="workload-chip">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="color:var(--text)">{{ gv.full_name }}</strong>
+        <span class="badge {% if wl.count > 0 %}badge-purple{% else %}badge-gray{% endif %}">{{ wl.count }} lớp</span>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem">
+        {% if wl.days %}
+          Ngày dạy: <strong>{{ wl.days|join(', ') }}</strong>
+        {% else %}
+          Chưa xếp lịch kỳ này
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- 5. Opened Course Sections Table -->
+<div class="card">
+  <div class="card-title">
+    📋 Danh sách các lớp học phần mở trong kỳ {{ selected_sem }} ({{ classes|length }} lớp)
+  </div>
+
+  {% if classes %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã lớp</th>
+          <th>Môn học phần</th>
+          <th style="text-align:center">Tín chỉ</th>
+          <th>Giảng viên</th>
+          <th>Lịch học (T2→T6)</th>
+          <th>Phòng</th>
+          <th>ĐK / Tối đa</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cls in classes %}
+        {% set info = cls.schedule_info or {} %}
+        {% set d_idx = info.get('day', 0)|int %}
+        {% set ts = info.get('tiet_start', 1)|int %}
+        {% set nt = info.get('num_tiet', 2)|int %}
+        <tr>
+          <td><strong style="color:var(--accent-text)">{{ cls.class_name }}</strong></td>
+          <td>
+            <div style="font-weight:600;color:var(--text)">{{ cls.course_name }}</div>
+            <div style="font-size:.74rem;color:var(--muted)">Mã HP: {{ cls.course_code or '—' }}</div>
+          </td>
+          <td style="text-align:center">
+            <span class="badge badge-blue">{{ info.get('credits', 2) }} TC</span>
+          </td>
+          <td>{{ cls.lecturer.full_name if cls.lecturer else '—' }}</td>
+          <td>
+            <strong>{{ weekday_labels.get(d_idx, 'Thứ 2') }}</strong> · Tiết {{ ts }}→{{ ts + nt - 1 }}
+          </td>
+          <td>🏫 {{ cls.room or '—' }}</td>
+          <td>
+            <strong>{{ enroll_counts.get(cls.id, 0) }}</strong>/{{ cls.max_students }} SV
+          </td>
+          <td style="text-align:right">
+            {% if enroll_counts.get(cls.id, 0) == 0 %}
+            <form method="POST" action="{{ url_for('admin.delete_course_class', class_id=cls.id) }}"
+                  onsubmit="return eduConfirmForm(event, this, 'Xóa lớp học phần {{ cls.class_name }}?', 'Xóa lớp học phần', 'Xóa lớp')" style="display:inline">
+              <button type="submit" class="btn btn-danger btn-sm">🗑 Xóa</button>
+            </form>
+            {% else %}
+              <span class="badge badge-green">Đang học</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <div class="empty-text">Chưa có lớp học phần nào mở trong kỳ {{ selected_sem }}</div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_script %}
+async function suggestOptimalSlot() {
+  const lectId  = document.getElementById('sel-lecturer').value;
+  const numTiet = document.getElementById('sel-numtiet').value;
+  if (!lectId) return;
+  try {
+    const res = await fetch(`/admin/api/suggest-schedule?semester={{ selected_sem }}&lecturer_id=${lectId}&num_tiet=${numTiet}`);
+    const d   = await res.json();
+    if (d.ok) {
+      document.getElementById('sel-day').value  = d.day;
+      document.getElementById('sel-tiet').value = d.tiet_start;
+      document.getElementById('sel-room').value = d.room;
+    }
+  } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', suggestOptimalSlot);
+{% endblock %}

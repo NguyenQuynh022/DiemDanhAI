@@ -1,102 +1,209 @@
 {% extends "lecturer/layout.html" %}
 {% block title %}Điểm danh — {{ cls.class_name }}{% endblock %}
-{% block page_title %}✅ Điểm danh — {{ cls.class_name }} · {{ cls.course_name }}{% endblock %}
+{% block page_title %}✅ Điểm danh · {{ cls.class_name }} — {{ cls.course_name }}{% endblock %}
 
 {% block extra_style %}
-.day-group { margin-bottom:.75rem; }
+.meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.35rem;
+  margin-bottom: 1.25rem;
+}
+.meta-item .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+.meta-item .val { font-weight: 700; color: var(--text); margin-top: 2px; font-size: 0.92rem; }
+
+.day-group { margin-bottom: 0.85rem; }
 .day-group-title {
-    font-size:.72rem; font-weight:700; color:#6b7280;
-    text-transform:uppercase; letter-spacing:.06em;
-    padding:.35rem .75rem; background:#f1f5f9;
-    border-radius:.35rem; margin-bottom:.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.35rem 0.65rem;
+  background: var(--surface2);
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
 }
 .sess-btn {
-    display:flex; align-items:center; gap:.6rem;
-    width:100%; padding:.5rem .75rem; border-radius:.4rem;
-    border:1px solid #e2e8f0; background:#fff;
-    font-size:.82rem; cursor:pointer;
-    transition:all .15s; text-align:left; margin-bottom:.3rem;
-    text-decoration:none; color:#374151;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.58rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  margin-bottom: 0.35rem;
+  text-decoration: none;
+  color: var(--text-secondary);
 }
-.sess-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
-.sess-btn.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
-.sess-btn.active .sess-date-num { color:#bfdbfe; }
-.sess-date-num { font-size:.95rem; font-weight:700; min-width:32px; text-align:center; }
-.sess-info { flex:1; min-width:0; }
-.sess-info-top { font-weight:600; font-size:.82rem; }
-.sess-info-sub { font-size:.72rem; opacity:.75; }
-.sess-status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.dot-done   { background:#22c55e; }
-.dot-today  { background:#f59e0b; animation:blink 1.5s infinite; }
-.dot-future { background:#d1d9e0; }
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.sess-btn:hover { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent-text); }
+.sess-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+}
+.sess-date-num { font-family: var(--head); font-size: 1rem; font-weight: 700; min-width: 30px; text-align: center; }
+.sess-info { flex: 1; min-width: 0; }
+.sess-info-top { font-weight: 600; font-size: 0.82rem; }
+.sess-info-sub { font-size: 0.72rem; opacity: 0.8; }
+.sess-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-done   { background: #10b981; }
+.dot-today  { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: blink 1.5s infinite; }
+.dot-future { background: #cbd5e1; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-.att-row { display:flex; align-items:center; gap:.75rem; padding:.7rem .75rem;
-  border-bottom:1px solid #f1f5f9; transition:background .15s; }
-.att-row:hover { background:#f8fafc; }
-.att-row:last-child { border-bottom:none; }
-.att-avatar { width:34px; height:34px; border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  display:grid; place-items:center; font-size:.85rem; color:#fff;
-  font-weight:700; flex-shrink:0; }
-.status-sel { padding:.3rem .6rem; border-radius:.35rem; border:1px solid #d1d9e0;
-  font-size:.82rem; color:#374151; background:#fff; cursor:pointer; }
-.rate-mini { font-size:.72rem; color:#6b7280; white-space:nowrap; }
-.stat-mini { text-align:center; padding:.6rem; background:#f8fafc;
-  border:1px solid #e2e8f0; border-radius:.5rem; }
-.stat-mini .v { font-family:'Sora',sans-serif; font-size:1.3rem; font-weight:700; line-height:1; }
-.stat-mini .l { font-size:.7rem; color:#6b7280; margin-top:.2rem; }
-.live-dot { width:7px; height:7px; border-radius:50%; background:#22c55e;
-  animation:blink 1.5s infinite; display:inline-block; margin-right:.3rem; }
+.stat-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+.stat-mini {
+  padding: 0.95rem 1rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stat-mini .v { font-family: var(--head); font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.stat-mini .l { font-size: 0.76rem; font-weight: 600; color: var(--muted); margin-top: 0.25rem; }
 
-/* ── Thanh mở/đóng điểm danh ── */
 .session-bar {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:.7rem 1rem; border-radius:.5rem; margin-bottom:1rem;
-  font-size:.85rem; font-weight:600; gap:.75rem; flex-wrap:wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.95rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  gap: 0.85rem;
+  flex-wrap: wrap;
 }
-.session-bar.scheduled { background:#fef9c3; border:1px solid #fde68a; color:#92400e; }
-.session-bar.ongoing   { background:#d1fae5; border:1px solid #6ee7b7; color:#065f46; }
-.session-bar.completed { background:#f1f5f9; border:1px solid #e2e8f0; color:#64748b; }
-.btn-open  { background:#10b981;color:#fff;border:none;border-radius:.4rem;
-  padding:.45rem 1.1rem;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap; }
-.btn-open:hover  { background:#059669; }
-.btn-close { background:#ef4444;color:#fff;border:none;border-radius:.4rem;
-  padding:.45rem 1.1rem;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap; }
-.btn-close:hover { background:#dc2626; }
+.session-bar.scheduled { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.session-bar.ongoing   { background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46; }
+.session-bar.completed { background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; }
+
+.btn-open {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff; border: none; border-radius: 9px;
+  padding: 0.52rem 1.15rem; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+}
+.btn-open:hover { filter: brightness(1.05); }
+.btn-close {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff; border: none; border-radius: 9px;
+  padding: 0.52rem 1.15rem; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.28);
+}
+.btn-close:hover { filter: brightness(1.05); }
+
+.att-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.att-row:hover { background: var(--surface2); }
+.att-row:last-child { border-bottom: none; }
+.att-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: grid; place-items: center; font-size: 0.88rem; color: #fff;
+  font-weight: 700; flex-shrink: 0;
+}
+.status-sel {
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+.status-sel:focus { border-color: var(--accent); }
+.rate-mini {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.22rem 0.6rem;
+  border-radius: 99px;
+  background: var(--surface2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #10b981;
+  animation: blink 1.5s infinite; display: inline-block;
+}
+@media (max-width: 640px) {
+  .stat-mini-grid { grid-template-columns: 1fr 1fr; }
+}
 {% endblock %}
 
 {% block content %}
-<!-- Info bar -->
-<div class="card" style="margin-bottom:1rem;padding:.875rem 1.5rem">
-  <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
-    <div><span style="color:var(--muted);font-size:.8rem">Học kỳ</span><br>
-      <span class="badge badge-purple" style="margin-top:.2rem">{{ cls.semester }}</span></div>
-    <div><span style="color:var(--muted);font-size:.8rem">Phòng</span><br><strong>{{ cls.room or '—' }}</strong></div>
-    <div><span style="color:var(--muted);font-size:.8rem">Sĩ số</span><br><strong>{{ enrollments|length }} sinh viên</strong></div>
-    <div><span style="color:var(--muted);font-size:.8rem">Tổng buổi</span><br><strong>{{ all_sessions|length }} buổi</strong></div>
-    <div style="margin-left:auto;display:flex;gap:.5rem">
-      <a href="{{ url_for('lecturer.class_grades', class_id=cls.id) }}" class="btn btn-outline btn-sm">📊 Điểm</a>
-      <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm">← Danh sách lớp</a>
-    </div>
+<!-- Class Meta Header -->
+<div class="card meta-strip">
+  <div class="meta-item">
+    <div class="lbl">Lớp học phần</div>
+    <div class="val" style="color:var(--accent-text)">{{ cls.class_name }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="lbl">Học kỳ</div>
+    <div class="val"><span class="badge badge-purple">{{ cls.semester }}</span></div>
+  </div>
+  <div class="meta-item">
+    <div class="lbl">Phòng học</div>
+    <div class="val">🏫 {{ cls.room or '—' }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="lbl">Sĩ số</div>
+    <div class="val">{{ enrollments|length }} sinh viên</div>
+  </div>
+  <div class="meta-item">
+    <div class="lbl">Tổng số buổi</div>
+    <div class="val">{{ all_sessions|length }} buổi</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="{{ url_for('lecturer.class_students', class_id=cls.id) }}" class="btn btn-outline btn-sm">👥 Sinh viên</a>
+    <a href="{{ url_for('lecturer.class_grades', class_id=cls.id) }}" class="btn btn-outline btn-sm">📊 Bảng điểm</a>
+    <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm">← Danh sách lớp</a>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:220px 1fr;gap:1.5rem;align-items:start">
+<div class="grid-attendance-gv">
 
-  <!-- Sidebar: danh sách buổi theo ngày -->
-  <div class="card" style="padding:1rem">
-    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:1rem;color:#111827">
-      📅 Buổi học theo ngày
+  <!-- Left Session Picker -->
+  <div class="card" style="padding:1.15rem">
+    <div style="font-family:var(--head);font-weight:700;font-size:.92rem;margin-bottom:.85rem;color:var(--text);display:flex;align-items:center;justify-content:space-between">
+      <span>📅 Danh sách buổi học</span>
+      <span class="badge badge-gray">{{ all_sessions|length }}</span>
     </div>
-    <div style="max-height:580px;overflow-y:auto;padding-right:.25rem">
+    <div style="max-height:580px;overflow-y:auto;padding-right:.2rem">
       {% set days_order = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'] %}
       {% for day in days_order %}
         {% if day in sessions_by_day %}
         <div class="day-group">
           <div class="day-group-title">{{ day }}</div>
           {% for sess in sessions_by_day[day] %}
-          {% set is_sel   = selected_session and selected_session.id == sess.id %}
+          {% set is_sel = selected_session and selected_session.id == sess.id %}
           <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id, session_id=sess.id) }}"
              class="sess-btn {% if is_sel %}active{% endif %}">
             <div class="sess-date-num">{{ sess.session_date.strftime('%d') }}</div>
@@ -105,8 +212,8 @@
               <div class="sess-info-sub">{{ sess.start_time.strftime('%H:%M') }}–{{ sess.end_time.strftime('%H:%M') }}</div>
             </div>
             <div class="sess-status-dot
-              {% if sess.status=='completed' %}dot-done
-              {% elif sess.status=='ongoing'  %}dot-today
+              {% if sess.status == 'completed' %}dot-done
+              {% elif sess.status == 'ongoing' %}dot-today
               {% else %}dot-future{% endif %}">
             </div>
           </a>
@@ -117,113 +224,115 @@
     </div>
   </div>
 
-  <!-- Panel phải -->
+  <!-- Right Live Monitor -->
   <div>
     {% if selected_session %}
+      {% set present_count = att_map.values()|selectattr('status','eq','present')|list|length %}
+      {% set late_count    = att_map.values()|selectattr('status','eq','late')|list|length %}
+      {% set absent_count  = enrollments|length - att_map|length %}
 
-    <!-- Thống kê nhanh -->
-    {% set present_count = att_map.values()|selectattr('status','eq','present')|list|length %}
-    {% set late_count    = att_map.values()|selectattr('status','eq','late')|list|length %}
-    {% set absent_count  = enrollments|length - att_map|length %}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1rem">
-      <div class="stat-mini"><div class="v" style="color:#15803d">{{ present_count }}</div><div class="l">Có mặt</div></div>
-      <div class="stat-mini"><div class="v" style="color:#b45309">{{ late_count    }}</div><div class="l">Đi trễ</div></div>
-      <div class="stat-mini"><div class="v" style="color:#b91c1c">{{ absent_count  }}</div><div class="l">Vắng</div></div>
-      <div class="stat-mini"><div class="v" style="color:#4f46e5">{{ enrollments|length }}</div><div class="l">Sĩ số</div></div>
-    </div>
-
-    {# ── Thanh trạng thái + nút Mở / Đóng điểm danh ── #}
-    <div id="session-bar"
-         class="session-bar {{ selected_session.status }}">
-
-      <div style="display:flex;align-items:center;gap:.6rem">
-        {# Đèn trạng thái #}
-        <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:
-          {% if selected_session.status=='ongoing'   %}#10b981
-          {% elif selected_session.status=='completed' %}#94a3b8
-          {% else %}#f59e0b{% endif %}"></span>
-
-        <span id="status-label">
-          {% if selected_session.status == 'ongoing' %}
-             Đang mở — sinh viên có thể điểm danh
-          {% elif selected_session.status == 'completed' %}
-            ✅ Đã kết thúc điểm danh
-          {% else %}
-             Chưa mở — sinh viên chưa điểm danh được
-          {% endif %}
-        </span>
+      <div class="stat-mini-grid">
+        <div class="stat-mini">
+          <div><div class="v" style="color:#059669">{{ present_count }}</div><div class="l">Có mặt</div></div>
+          <span style="font-size:1.35rem">✅</span>
+        </div>
+        <div class="stat-mini">
+          <div><div class="v" style="color:#d97706">{{ late_count }}</div><div class="l">Đi trễ</div></div>
+          <span style="font-size:1.35rem">⏰</span>
+        </div>
+        <div class="stat-mini">
+          <div><div class="v" style="color:#dc2626">{{ absent_count }}</div><div class="l">Vắng / Chưa ĐD</div></div>
+          <span style="font-size:1.35rem">❌</span>
+        </div>
+        <div class="stat-mini">
+          <div><div class="v" style="color:var(--accent)">{{ enrollments|length }}</div><div class="l">Tổng sĩ số</div></div>
+          <span style="font-size:1.35rem">👥</span>
+        </div>
       </div>
 
-      {# Nút hành động — linh hoạt mở/đóng/mở lại #}
-      <div style="display:flex;gap:.5rem">
-        {% if selected_session.status == 'scheduled' %}
-          <button class="btn-open"
-                  onclick="openSession({{ selected_session.id }})">
-            ▶ Mở điểm danh
-          </button>
-        {% elif selected_session.status == 'ongoing' %}
-          <button class="btn-close"
-                  onclick="closeSession({{ selected_session.id }})">
-            ⏹ Đóng điểm danh
-          </button>
-        {% elif selected_session.status == 'completed' %}
-          <button class="btn-open"
-                  style="background:#f59e0b"
-                  onclick="openSession({{ selected_session.id }})">
-            🔄 Mở lại điểm danh
-          </button>
+      <!-- Session Action Bar -->
+      <div id="session-bar" class="session-bar {{ selected_session.status }}">
+        <div style="display:flex;align-items:center;gap:.65rem">
+          <span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:
+            {% if selected_session.status == 'ongoing' %}#10b981
+            {% elif selected_session.status == 'completed' %}#64748b
+            {% else %}#f59e0b{% endif %}"></span>
+          <span id="status-label">
+            {% if selected_session.status == 'ongoing' %}
+              Phiên điểm danh đang mở — Sinh viên có thể quét khuôn mặt ngay bây giờ
+            {% elif selected_session.status == 'completed' %}
+              Phiên điểm danh đã đóng (vẫn có thể chỉnh sửa thủ công bên dưới)
+            {% else %}
+              Phiên chưa mở — Nhấn "Mở điểm danh" để cho phép sinh viên check-in AI
+            {% endif %}
+          </span>
+        </div>
+
+        <div style="display:flex;gap:.5rem">
+          {% if selected_session.status == 'scheduled' %}
+            <button class="btn-open" onclick="openSession({{ selected_session.id }})">
+              ▶ Mở điểm danh AI
+            </button>
+          {% elif selected_session.status == 'ongoing' %}
+            <button class="btn-close" onclick="closeSession({{ selected_session.id }})">
+              ⏹ Đóng &amp; Chốt vắng
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Student Roster List -->
+      <div class="card">
+        <div class="card-title" style="gap:.6rem">
+          <span class="live-dot"></span>
+          <span>Buổi ngày {{ selected_session.session_date.strftime('%d/%m/%Y') }} ({{ selected_session.start_time.strftime('%H:%M') }}–{{ selected_session.end_time.strftime('%H:%M') }})</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:.55rem">
+            <span id="last-update" style="font-size:.75rem;color:var(--muted);font-weight:500"></span>
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()">🔄 Làm mới</button>
+          </div>
+        </div>
+
+        {% if enrollments %}
+          <div>
+            {% for enroll, student in enrollments %}
+            {% set att = att_map.get(student.id) %}
+            <div class="att-row" id="att-{{ student.id }}">
+              <div class="att-avatar">{{ student.full_name[0] }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:.9rem;color:var(--text)">{{ student.full_name }}</div>
+                <div style="font-size:.76rem;color:var(--muted);margin-top:1px">
+                  MSSV: <strong>{{ student.student_code or '—' }}</strong>
+                  {% if att and att.checkin_time %} · 🕒 {{ att.checkin_time.strftime('%H:%M:%S') }}{% endif %}
+                  {% if att and att.face_score %} · 🤖 Độ khớp {{ '%.0f'|format(att.face_score*100) }}%{% endif %}
+                </div>
+              </div>
+              {% set s = stats.get(student.id, {}) %}
+              <div class="rate-mini" title="Tỷ lệ chuyên cần cả kỳ">
+                {{ s.get('present',0) }}/{{ s.get('total',0) }} ({{ s.get('rate',0) }}%)
+              </div>
+              <select class="status-sel" id="sel-{{ student.id }}"
+                      onchange="updateStatus({{ student.id }}, {{ cls.id }}, {{ selected_session.id }}, this.value)">
+                <option value="present" {% if att and att.status=='present' %}selected{% endif %}>✅ Có mặt</option>
+                <option value="late"    {% if att and att.status=='late'    %}selected{% endif %}>⏰ Đi trễ</option>
+                <option value="absent"  {% if not att or att.status=='absent' %}selected{% endif %}>❌ Vắng mặt</option>
+                <option value="excused" {% if att and att.status=='excused' %}selected{% endif %}>📋 Có phép</option>
+              </select>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">
+            <div class="empty-icon">👥</div>
+            <div class="empty-text">Chưa có sinh viên nào đăng ký trong lớp này</div>
+          </div>
         {% endif %}
       </div>
-
-    </div>
-
-    <!-- Danh sách điểm danh -->
-    <div class="card">
-      <div class="card-title">
-        <span class="live-dot"></span>
-        {{ selected_session.session_date.strftime('%A, %d/%m/%Y') }}
-        · Tiết {{ selected_session.start_time.strftime('%H:%M') }}–{{ selected_session.end_time.strftime('%H:%M') }}
-        <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="refreshStatus()">🔄</button>
-        <span id="last-update" style="font-size:.75rem;color:var(--muted);font-weight:400"></span>
-      </div>
-
-      {% if enrollments %}
-        {% for enroll, student in enrollments %}
-        {% set att = att_map.get(student.id) %}
-        <div class="att-row" id="att-{{ student.id }}">
-          <div class="att-avatar">{{ student.full_name[0] }}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:.875rem">{{ student.full_name }}</div>
-            <div style="font-size:.74rem;color:#6b7280">
-              {{ student.student_code or '—' }}
-              {% if att and att.checkin_time %} · {{ att.checkin_time.strftime('%H:%M:%S') }}{% endif %}
-              {% if att and att.face_score %} · 🤖 {{ '%.0f'|format(att.face_score*100) }}%{% endif %}
-            </div>
-          </div>
-          {% set s = stats.get(student.id, {}) %}
-          <div class="rate-mini">{{ s.get('present',0) }}/{{ s.get('total',0) }} ({{ s.get('rate',0) }}%)</div>
-          <select class="status-sel" id="sel-{{ student.id }}"
-                  onchange="updateStatus({{ student.id }}, {{ cls.id }}, {{ selected_session.id }}, this.value)">
-            <option value="present" {% if att and att.status=='present' %}selected{% endif %}>✅ Có mặt</option>
-            <option value="late"    {% if att and att.status=='late'    %}selected{% endif %}>⏰ Đi trễ</option>
-            <option value="absent"  {% if not att or att.status=='absent' %}selected{% endif %}>❌ Vắng</option>
-            <option value="excused" {% if att and att.status=='excused' %}selected{% endif %}>📋 Có phép</option>
-          </select>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty">
-          <div class="empty-icon">👥</div>
-          <div class="empty-text">Chưa có sinh viên trong lớp</div>
-        </div>
-      {% endif %}
-    </div>
 
     {% else %}
       <div class="card">
         <div class="empty">
           <div class="empty-icon">👈</div>
-          <div class="empty-text">Chọn buổi học bên trái để xem điểm danh</div>
+          <div class="empty-text">Chọn một buổi học ở cột bên trái để theo dõi điểm danh</div>
         </div>
       </div>
     {% endif %}
@@ -236,7 +345,6 @@
 const SESSION_ID = {{ selected_session.id }};
 const CLASS_ID   = {{ cls.id }};
 
-// ── Cập nhật trạng thái điểm danh thủ công ───────────────────────
 async function updateStatus(studentId, classId, sessionId, status) {
   try {
     await fetch('{{ url_for("attendance.manual_checkin") }}', {
@@ -249,46 +357,54 @@ async function updateStatus(studentId, classId, sessionId, status) {
     });
     const row = document.getElementById('att-' + studentId);
     if (row) {
-      row.style.background = '#f0fdf4';
+      row.style.background = '#ecfdf5';
       setTimeout(() => row.style.background = '', 800);
     }
   } catch(e) { console.error(e); }
 }
 
-// ── Refresh realtime ──────────────────────────────────────────────
 async function refreshStatus() {
   try {
     const res  = await fetch(`/attendance/api/session/${SESSION_ID}/status`);
     const data = await res.json();
-    document.getElementById('last-update').textContent = 'Cập nhật ' + data.updated_at;
+    document.getElementById('last-update').textContent = 'Cập nhật lúc ' + data.updated_at;
     data.records.forEach(r => {
       const sel = document.getElementById('sel-' + r.student_id);
       if (sel) sel.value = r.status;
     });
   } catch(e) {}
 }
-setInterval(refreshStatus, 30000);
+setInterval(refreshStatus, 20000);
 
-// ── Mở buổi điểm danh ────────────────────────────────────────────
 async function openSession(sessionId) {
-  if (!confirm('Mở điểm danh cho buổi học này?\nSinh viên sẽ có thể điểm danh ngay.')) return;
+  const ok = await eduConfirm({
+    title: 'Mở phiên điểm danh AI',
+    message: 'Mở điểm danh cho buổi học này?\nSinh viên sẽ có thể quét khuôn mặt điểm danh ngay lập tức.',
+    confirmText: 'Mở điểm danh'
+  });
+  if (!ok) return;
   try {
     const res  = await fetch(`/attendance/lecturer/session/${sessionId}/open`, { method: 'POST' });
     const data = await res.json();
-    alert(data.msg);
+    await eduAlert(data.msg, data.ok ? 'Đã mở điểm danh' : 'Thông báo');
     if (data.ok) location.reload();
-  } catch(e) { alert('Lỗi kết nối, thử lại.'); }
+  } catch(e) { eduAlert('Lỗi kết nối máy chủ, vui lòng thử lại.', 'Lỗi kết nối'); }
 }
 
-// ── Đóng buổi điểm danh ──────────────────────────────────────────
 async function closeSession(sessionId) {
-  if (!confirm('Đóng điểm danh?\nSinh viên chưa điểm danh sẽ bị ghi VẮNG tự động.')) return;
+  const ok = await eduConfirm({
+    title: 'Đóng phiên & Chốt vắng',
+    message: 'Đóng điểm danh buổi này?\nToàn bộ sinh viên chưa check-in sẽ được tự động ghi nhận VẮNG.',
+    confirmText: 'Đóng & Chốt vắng',
+    danger: true
+  });
+  if (!ok) return;
   try {
     const res  = await fetch(`/attendance/lecturer/session/${sessionId}/close`, { method: 'POST' });
     const data = await res.json();
-    alert(data.msg);
+    await eduAlert(data.msg, data.ok ? 'Đã đóng điểm danh' : 'Thông báo');
     if (data.ok) location.reload();
-  } catch(e) { alert('Lỗi kết nối, thử lại.'); }
+  } catch(e) { eduAlert('Lỗi kết nối máy chủ, vui lòng thử lại.', 'Lỗi kết nối'); }
 }
 {% endif %}
 {% endblock %}

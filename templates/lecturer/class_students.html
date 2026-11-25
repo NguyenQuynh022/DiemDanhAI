@@ -1,54 +1,167 @@
 {% extends "lecturer/layout.html" %}
-{% block title %}Sinh viên — {{ cls.class_name }}{% endblock %}
-{% block page_title %}👥 {{ cls.class_name }} — {{ cls.course_name }}{% endblock %}
+{% block title %}Sinh viên & Gửi mail lớp — {{ cls.class_name }}{% endblock %}
+{% block page_title %}👥 Danh sách sinh viên &amp; Gửi Email lớp · {{ cls.class_name }} — {{ cls.course_name }}{% endblock %}
+
+{% block extra_style %}
+.mail-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  place-items: center;
+  padding: 1rem;
+}
+.mail-modal-backdrop.open { display: grid; }
+.mail-modal-card {
+  width: 100%;
+  max-width: 660px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem 1.65rem;
+}
+.tpl-chips {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+.tpl-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tpl-chip:hover {
+  background: var(--accent);
+  color: #fff;
+}
+{% endblock %}
+
 {% block content %}
-<!-- Info bar -->
-<div class="card" style="margin-bottom:1rem;padding:1rem 1.5rem">
-  <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap">
-    <div><span style="color:var(--muted);font-size:.8rem">Học kỳ</span><br><span class="badge badge-purple" style="margin-top:.25rem">{{ cls.semester }}</span></div>
-    <div><span style="color:var(--muted);font-size:.8rem">Phòng học</span><br><strong>{{ cls.room or '—' }}</strong></div>
-    <div><span style="color:var(--muted);font-size:.8rem">Sĩ số</span><br><strong>{{ enrollments|length }}/{{ cls.max_students }}</strong></div>
-    <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm" style="margin-left:auto">← Danh sách lớp</a>
+<!-- Header Info -->
+<div class="card" style="margin-bottom:1.15rem;padding:1rem 1.35rem;display:flex;gap:1.75rem;align-items:center;flex-wrap:wrap">
+  <div>
+    <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase">Học kỳ</div>
+    <div style="margin-top:2px"><span class="badge badge-purple">{{ cls.semester }}</span></div>
+  </div>
+  <div>
+    <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase">Phòng học</div>
+    <div style="font-weight:700;margin-top:2px">🏫 {{ cls.room or '—' }}</div>
+  </div>
+  <div>
+    <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase">Sĩ số hiện tại</div>
+    <div style="font-weight:700;margin-top:2px">{{ enrollments|length }}/{{ cls.max_students }} sinh viên</div>
+  </div>
+  <div>
+    <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase">Email liên hệ SV</div>
+    <div style="font-weight:700;margin-top:2px;color:var(--accent-text)">✉️ {{ student_emails|length }}/{{ enrollments|length }} email</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap">
+    <button type="button" class="btn btn-primary btn-sm" onclick="openMailModal()">
+      ✉️ Gửi Email cho cả lớp ({{ enrollments|length }} SV)
+    </button>
+    <a href="{{ url_for('lecturer.class_grades', class_id=cls.id) }}" class="btn btn-outline btn-sm">📊 Bảng điểm</a>
+    <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id) }}" class="btn btn-outline btn-sm">✅ Điểm danh</a>
+    <a href="{{ url_for('lecturer.class_list') }}" class="btn btn-outline btn-sm">← Danh sách lớp</a>
   </div>
 </div>
 
-<!-- Add student form -->
-<div class="card" style="margin-bottom:1rem">
-  <div class="card-title">➕ Thêm sinh viên vào lớp</div>
-  <form method="POST" action="{{ url_for('lecturer.add_student', class_id=cls.id) }}" style="display:flex;gap:1rem;align-items:flex-end">
-    <div class="form-group" style="margin:0;flex:1">
-      <label class="form-label">MSSV hoặc tên đăng nhập</label>
-      <input type="text" name="identifier" class="form-control" placeholder="Nhập MSSV hoặc username sinh viên" required>
+<!-- Grid: Add Student + Quick Class Email Card -->
+<div class="grid-2col" style="margin-bottom:1.25rem;align-items:stretch">
+  <!-- Add Student Form -->
+  <div class="card" style="background:linear-gradient(135deg,#ffffff,#eef2ff50)">
+    <div class="card-title" style="margin-bottom:.85rem">➕ Thêm sinh viên vào lớp học phần</div>
+    <form method="POST" action="{{ url_for('lecturer.add_student', class_id=cls.id) }}" style="display:flex;gap:.65rem;align-items:flex-end;flex-wrap:wrap">
+      <div class="form-group" style="margin:0;flex:1;min-width:200px">
+        <label class="form-label">Mã số sinh viên (MSSV) hoặc Tên đăng nhập</label>
+        <input type="text" name="identifier" class="form-control" placeholder="Ví dụ: 23ITB001 hoặc nguyen.van.an" required>
+      </div>
+      <button type="submit" class="btn btn-primary">➕ Thêm vào lớp</button>
+    </form>
+  </div>
+
+  <!-- Send Email to Class Banner Card -->
+  <div class="card" style="display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+      <div class="card-title" style="margin-bottom:.55rem">
+        ✉️ Gửi thông báo &amp; Email đến toàn bộ lớp
+        {% if smtp_ready %}
+          <span class="badge badge-green" style="margin-left:auto">● SMTP Sẵn sàng</span>
+        {% else %}
+          <span class="badge badge-blue" style="margin-left:auto">Hộp thư nội bộ + Gmail/Mail App</span>
+        {% endif %}
+      </div>
+      <div style="font-size:.83rem;color:var(--text-secondary);line-height:1.55;margin-bottom:.85rem">
+        Soạn thông báo học tập, nhắc lịch kiểm tra, gửi tài liệu hoặc báo nghỉ buổi học đến tất cả <strong>{{ enrollments|length }} sinh viên</strong> ({{ student_emails|length }} địa chỉ email) chỉ với 1 cú nhấp.
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary">➕ Thêm</button>
-  </form>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button type="button" class="btn btn-primary btn-sm" onclick="openMailModal()">
+        📨 Soạn &amp; Gửi Email cả lớp
+      </button>
+      {% if student_emails %}
+      <button type="button" class="btn btn-outline btn-sm" onclick="copyAllEmails()">
+        📋 Sao chép {{ student_emails|length }} email SV
+      </button>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
-<!-- Student list -->
+<!-- Student Roster -->
 <div class="card">
-  <div class="card-title">📋 Danh sách sinh viên ({{ enrollments|length }})</div>
+  <div class="card-title">📋 Danh sách sinh viên đã đăng ký ({{ enrollments|length }})</div>
   {% if enrollments %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Họ và tên</th><th>MSSV</th><th>Email</th><th>Ngày thêm</th><th>Thao tác</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Sinh viên</th>
+          <th>MSSV</th>
+          <th>Email liên hệ</th>
+          <th>Ngày đăng ký</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
       <tbody>
         {% for enroll, student in enrollments %}
         <tr>
           <td>
             <div style="display:flex;align-items:center;gap:.75rem">
-              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:.85rem;flex-shrink:0">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:.85rem;color:#fff;font-weight:700;flex-shrink:0">
                 {{ student.full_name[0] }}
               </div>
-              <span style="font-weight:600">{{ student.full_name }}</span>
+              <div>
+                <div style="font-weight:600;color:var(--text)">{{ student.full_name }}</div>
+                <div style="font-size:.73rem;color:var(--muted)">@{{ student.username }}</div>
+              </div>
             </div>
           </td>
           <td><span class="badge badge-gray">{{ student.student_code or '—' }}</span></td>
-          <td><span style="color:var(--muted)">{{ student.email or '—' }}</span></td>
-          <td>{{ enroll.created_at.strftime('%d/%m/%Y') if enroll.created_at else '—' }}</td>
           <td>
+            {% if student.email %}
+              <a href="mailto:{{ student.email }}?subject=[{{ cls.class_name }}] Trao đổi học phần {{ cls.course_name }}" style="color:var(--accent-text);font-weight:500">
+                {{ student.email }}
+              </a>
+            {% else %}
+              <span style="color:var(--muted)">—</span>
+            {% endif %}
+          </td>
+          <td>{{ enroll.created_at.strftime('%d/%m/%Y') if enroll.created_at else '—' }}</td>
+          <td style="text-align:right">
             <form method="POST" action="{{ url_for('lecturer.remove_student', class_id=cls.id, student_id=student.id) }}"
-                  onsubmit="return confirm('Xóa {{ student.full_name }} khỏi lớp?')">
-              <button type="submit" class="btn btn-danger btn-sm">🗑 Xóa</button>
+                  onsubmit="return eduConfirmForm(event, this, 'Xóa sinh viên {{ student.full_name }} khỏi lớp {{ cls.class_name }}?', 'Xóa sinh viên khỏi lớp', 'Xóa khỏi lớp')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑 Xóa khỏi lớp</button>
             </form>
           </td>
         </tr>
@@ -57,7 +170,134 @@
     </table>
   </div>
   {% else %}
-    <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Chưa có sinh viên nào trong lớp</div></div>
+    <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Chưa có sinh viên nào trong lớp này</div></div>
   {% endif %}
 </div>
+
+<!-- Modal Soạn & Gửi Email cho toàn bộ Sinh viên trong lớp học phần -->
+<div class="mail-modal-backdrop" id="mail-modal" onclick="if(event.target===this)closeMailModal()">
+  <div class="mail-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div>
+        <h3 style="font-family:var(--head);font-size:1.08rem;font-weight:700">
+          ✉️ Gửi Email đến toàn bộ sinh viên lớp {{ cls.class_name }}
+        </h3>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:2px">
+          {{ cls.course_name }} · Người nhận: <strong>{{ enrollments|length }} sinh viên</strong> ({{ student_emails|length }} địa chỉ email)
+        </div>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeMailModal()">✕</button>
+    </div>
+
+    <!-- Mẫu soạn nhanh -->
+    <div style="font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase">Mẫu nội dung nhanh:</div>
+    <div class="tpl-chips">
+      <button type="button" class="tpl-chip" onclick="fillMailTpl('remind')">📚 Nhắc lịch học &amp; tài liệu</button>
+      <button type="button" class="tpl-chip" onclick="fillMailTpl('exam')">📝 Thông báo kiểm tra giữa kỳ</button>
+      <button type="button" class="tpl-chip" onclick="fillMailTpl('cancel')">🗓️ Thông báo nghỉ học / học bù</button>
+    </div>
+
+    <form method="POST" action="{{ url_for('lecturer.send_class_email', class_id=cls.id) }}" id="class-mail-form">
+      <div class="form-group">
+        <label class="form-label">Tiêu đề Email ✱</label>
+        <input type="text" name="subject" id="mail-subject" class="form-control"
+               placeholder="VD: Thông báo tài liệu học tập & chuẩn bị bài tuần tới" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nội dung gửi sinh viên ✱</label>
+        <textarea name="message" id="mail-body" rows="6" class="form-control"
+                  placeholder="Nhập nội dung thông báo gửi đến toàn bộ sinh viên lớp {{ cls.class_name }}..." required></textarea>
+      </div>
+
+      {% if upcoming_sessions %}
+      <div class="form-group">
+        <label class="form-label">Tùy chọn: Đánh dấu Báo nghỉ buổi học trên Thời khóa biểu (Nếu là email báo nghỉ)</label>
+        <select name="cancel_session_id" class="form-control">
+          <option value="">— Không báo nghỉ (Chỉ gửi Email &amp; Thông báo) —</option>
+          {% for us in upcoming_sessions %}
+            <option value="{{ us.id }}">
+              Báo nghỉ buổi ngày {{ us.session_date.strftime('%d/%m/%Y') }} ({{ us.start_time.strftime('%H:%M') }}–{{ us.end_time.strftime('%H:%M') }} · Phòng {{ us.room or cls.room }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.65rem;flex-wrap:wrap;margin-top:1.15rem;padding-top:.95rem;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+          {% if student_emails %}
+          <button type="button" class="btn btn-outline btn-sm" onclick="openGmailCompose()" title="Mở cửa sổ soạn thư Gmail trên trình duyệt với sẵn danh sách BCC cả lớp">
+            🌐 Mở trên Gmail Web
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openDefaultMailClient()" title="Mở ứng dụng Mail mặc định trên máy tính (Outlook / Mail)">
+            📬 Mở ứng dụng Mail
+          </button>
+          {% endif %}
+        </div>
+
+        <div style="display:flex;gap:.5rem">
+          <button type="button" class="btn btn-outline" onclick="closeMailModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">📨 Gửi ngay cho cả lớp</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+const CLASS_EMAILS = {{ student_emails|tojson }};
+const CLASS_CODE   = {{ cls.class_name|tojson }};
+const COURSE_NAME  = {{ cls.course_name|tojson }};
+
+function openMailModal() {
+  document.getElementById('mail-modal').classList.add('open');
+  if (window.location.hash === '#send-mail') {
+    history.replaceState(null, '', window.location.pathname);
+  }
+}
+function closeMailModal() {
+  document.getElementById('mail-modal').classList.remove('open');
+}
+
+if (window.location.hash === '#send-mail') {
+  document.addEventListener('DOMContentLoaded', openMailModal);
+}
+
+function fillMailTpl(kind) {
+  const subj = document.getElementById('mail-subject');
+  const body = document.getElementById('mail-body');
+  if (kind === 'remind') {
+    subj.value = `Tài liệu học tập & chuẩn bị buổi học tiếp theo môn ${COURSE_NAME}`;
+    body.value = `Chào các bạn sinh viên lớp ${CLASS_CODE},\n\nThầy/cô gửi thông báo nhắc các bạn xem trước tài liệu bài giảng và đi học đúng giờ trong buổi học tới để điểm danh khuôn mặt AI đầy đủ.\n\nChúc các bạn học tốt!`;
+  } else if (kind === 'exam') {
+    subj.value = `Thông báo lịch kiểm tra đánh giá học phần ${COURSE_NAME}`;
+    body.value = `Chào các bạn sinh viên lớp ${CLASS_CODE},\n\nLớp chúng ta sẽ có bài kiểm tra đánh giá vào buổi học tuần tới tại phòng ${ {{ (cls.room or 'theo lịch')|tojson }} }.\nCác bạn ôn tập kỹ các nội dung đã học và có mặt trước giờ kiểm tra 10 phút.\n\nTrân trọng.`;
+  } else if (kind === 'cancel') {
+    subj.value = `Thông báo nghỉ học môn ${COURSE_NAME} (${CLASS_CODE})`;
+    body.value = `Chào các bạn sinh viên lớp ${CLASS_CODE},\n\nDo bận công tác đột xuất của Khoa/Trường, lớp học phần ${COURSE_NAME} (${CLASS_CODE}) được nghỉ buổi học sắp tới. Lịch học bù sẽ được thầy/cô thông báo vào tuần kế tiếp.\n\nTrân trọng.`;
+  }
+}
+
+function copyAllEmails() {
+  if (!CLASS_EMAILS.length) return;
+  navigator.clipboard.writeText(CLASS_EMAILS.join(', ')).then(() => {
+    eduAlert(`Đã sao chép ${CLASS_EMAILS.length} địa chỉ email sinh viên lớp ${CLASS_CODE} vào bộ nhớ tạm!`, 'Sao chép thành công');
+  });
+}
+
+function openGmailCompose() {
+  const subj = encodeURIComponent(`[${CLASS_CODE}] ` + (document.getElementById('mail-subject').value || `Thông báo lớp ${COURSE_NAME}`));
+  const body = encodeURIComponent(document.getElementById('mail-body').value || '');
+  const bcc  = encodeURIComponent(CLASS_EMAILS.join(','));
+  window.open(`https://mail.google.com/mail/?view=cm&fs=1&bcc=${bcc}&su=${subj}&body=${body}`, '_blank');
+}
+
+function openDefaultMailClient() {
+  const subj = encodeURIComponent(`[${CLASS_CODE}] ` + (document.getElementById('mail-subject').value || `Thông báo lớp ${COURSE_NAME}`));
+  const body = encodeURIComponent(document.getElementById('mail-body').value || '');
+  const bcc  = encodeURIComponent(CLASS_EMAILS.join(','));
+  window.location.href = `mailto:?bcc=${bcc}&subject=${subj}&body=${body}`;
+}
 {% endblock %}

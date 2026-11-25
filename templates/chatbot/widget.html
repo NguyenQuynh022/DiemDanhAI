@@ -1,124 +1,131 @@
-<!-- EduPortal AI Chatbot Widget — gọi qua Flask proxy -->
+<!-- EduPortal AI Chatbot Widget — Modern Floating Assistant -->
 <style>
 #chat-fab {
     position:fixed; bottom:1.5rem; right:1.5rem; z-index:1000;
-    width:56px; height:56px; border-radius:50%;
-    background:linear-gradient(135deg,#3b82f6,#6366f1);
+    width:56px; height:56px; border-radius:16px;
+    background:linear-gradient(135deg, var(--accent, #2563eb), var(--accent2, #4f46e5));
     border:none; cursor:pointer;
-    box-shadow:0 4px 20px rgba(99,102,241,.45);
+    box-shadow:0 8px 24px rgba(79,70,229,.42);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.4rem; transition:transform .2s,box-shadow .2s; color:#fff;
+    font-size:1.45rem; transition:transform .2s, box-shadow .2s, border-radius .2s; color:#fff;
 }
-#chat-fab:hover { transform:scale(1.1); box-shadow:0 6px 28px rgba(99,102,241,.6); }
-#chat-fab.open  { background:linear-gradient(135deg,#ef4444,#dc2626); }
+#chat-fab:hover { transform:translateY(-2px) scale(1.05); box-shadow:0 12px 28px rgba(79,70,229,.55); }
+#chat-fab.open  { background:linear-gradient(135deg,#ef4444,#dc2626); border-radius:50%; }
 
 #chat-window {
     position:fixed; bottom:5.5rem; right:1.5rem; z-index:999;
-    width:380px; height:540px;
+    width:390px; max-width:calc(100vw - 2rem); height:560px; max-height:calc(100vh - 7.5rem);
     background:#ffffff; border:1px solid #e2e8f0;
-    border-radius:1rem; box-shadow:0 20px 60px rgba(0,0,0,.15);
+    border-radius:20px; box-shadow:0 24px 64px rgba(15,23,42,.18);
     display:flex; flex-direction:column;
-    animation:chatIn .25s cubic-bezier(.34,1.56,.64,1);
+    animation:chatIn .25s cubic-bezier(.16,1,.3,1);
     overflow:hidden;
 }
 #chat-window.hidden { display:none; }
 @keyframes chatIn {
-    from{opacity:0;transform:scale(.92) translateY(12px)}
+    from{opacity:0;transform:scale(.94) translateY(14px)}
     to  {opacity:1;transform:scale(1)   translateY(0)}
 }
 .chat-header {
-    background:linear-gradient(135deg,#1e1b4b,#312e81);
-    padding:.875rem 1.1rem;
+    background:var(--hero-gradient, linear-gradient(135deg,#0f172a,#2563eb));
+    padding:1rem 1.15rem;
     display:flex; align-items:center; gap:.75rem; flex-shrink:0;
 }
 .chat-avatar {
-    width:36px; height:36px; border-radius:50%;
-    background:linear-gradient(135deg,#3b82f6,#6366f1);
-    display:grid; place-items:center; font-size:1.1rem;
-    border:2px solid rgba(255,255,255,.2); flex-shrink:0;
+    width:38px; height:38px; border-radius:12px;
+    background:rgba(255,255,255,.16);
+    display:grid; place-items:center; font-size:1.15rem;
+    border:1px solid rgba(255,255,255,.25); flex-shrink:0;
 }
-.chat-hname  { font-weight:700; font-size:.9rem; color:#fff; }
-.chat-hsub   { font-size:.72rem; color:#a5b4fc; display:flex; align-items:center; gap:.3rem; }
-.online-dot  { width:6px; height:6px; border-radius:50%; background:#22c55e; animation:blink 2s infinite; }
+.chat-hname  { font-family:var(--head, sans-serif); font-weight:700; font-size:.92rem; color:#fff; }
+.chat-hsub   { font-size:.73rem; color:rgba(255,255,255,.8); display:flex; align-items:center; gap:.35rem; margin-top:1px; }
+.online-dot  { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; animation:blink 2s infinite; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
 .chat-close  {
-    background:rgba(255,255,255,.12); border:none; color:#fff;
-    width:28px; height:28px; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,.14); border:none; color:#fff;
+    width:30px; height:30px; border-radius:8px; cursor:pointer;
     font-size:.9rem; display:grid; place-items:center; margin-left:auto;
     transition:background .15s;
 }
-.chat-close:hover { background:rgba(255,255,255,.25); }
+.chat-close:hover { background:rgba(255,255,255,.28); }
 
 #chat-msgs {
-    flex:1; overflow-y:auto; padding:1rem;
-    display:flex; flex-direction:column; gap:.6rem;
+    flex:1; overflow-y:auto; padding:1rem 1.1rem;
+    background:#f8fafc;
+    display:flex; flex-direction:column; gap:.7rem;
     scroll-behavior:smooth;
 }
 #chat-msgs::-webkit-scrollbar { width:4px; }
-#chat-msgs::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:2px; }
+#chat-msgs::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:2px; }
 
-.cmsg { max-width:85%; animation:msgIn .2s ease; }
+.cmsg { max-width:86%; animation:msgIn .2s ease; }
 @keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .cmsg.user { align-self:flex-end; }
 .cmsg.bot  { align-self:flex-start; }
 .cbubble {
-    padding:.6rem .875rem; border-radius:1rem;
-    font-size:.855rem; line-height:1.55; word-break:break-word;
+    padding:.68rem .95rem; border-radius:14px;
+    font-size:.86rem; line-height:1.55; word-break:break-word;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
 }
-.cmsg.user .cbubble { background:#3b82f6; color:#fff; border-bottom-right-radius:.25rem; }
-.cmsg.bot  .cbubble { background:#f1f5f9; color:#111827; border-bottom-left-radius:.25rem; border:1px solid #e2e8f0; }
-.cmsg.error .cbubble { background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; }
-.ctime { font-size:.68rem; color:#9ca3af; margin-top:.2rem; padding:0 .25rem; }
+.cmsg.user .cbubble {
+    background:linear-gradient(135deg, var(--accent, #2563eb), var(--accent2, #4f46e5));
+    color:#fff; border-bottom-right-radius:4px;
+}
+.cmsg.bot  .cbubble { background:#ffffff; color:#0f172a; border-bottom-left-radius:4px; border:1px solid #e2e8f0; }
+.cmsg.error .cbubble { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+.ctime { font-size:.67rem; color:#94a3b8; margin-top:.22rem; padding:0 .25rem; }
 .cmsg.user .ctime { text-align:right; }
 
-.typing { display:flex; gap:4px; padding:.6rem .875rem; }
+.typing { display:flex; gap:4px; padding:.45rem .6rem; }
 .typing span {
     width:7px; height:7px; border-radius:50%; background:#94a3b8;
     animation:tdot .9s infinite;
 }
 .typing span:nth-child(2){animation-delay:.15s}
 .typing span:nth-child(3){animation-delay:.3s}
-@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
 
-#quick-area { padding:0 .75rem .5rem; display:flex; gap:.4rem; flex-wrap:wrap; }
+#quick-area { padding:.5rem .85rem; background:#f8fafc; display:flex; gap:.4rem; flex-wrap:wrap; border-top:1px solid #f1f5f9; }
+#quick-area:empty { display:none; }
 .qbtn {
-    padding:.3rem .7rem; border-radius:99px;
-    border:1px solid #c7d2fe; background:#eef2ff;
-    color:#4338ca; font-size:.78rem; cursor:pointer; transition:all .15s;
+    padding:.35rem .75rem; border-radius:99px;
+    border:1px solid var(--accent-border, #bfdbfe); background:var(--accent-soft, #eff6ff);
+    color:var(--accent-text, #1d4ed8); font-size:.77rem; font-weight:600; cursor:pointer; transition:all .15s;
 }
-.qbtn:hover { background:#4338ca; color:#fff; border-color:#4338ca; }
+.qbtn:hover { background:var(--accent, #2563eb); color:#fff; border-color:var(--accent, #2563eb); }
 
 .chat-input-area {
-    padding:.75rem; border-top:1px solid #f1f5f9;
+    padding:.75rem .85rem; background:#ffffff; border-top:1px solid #e2e8f0;
     display:flex; gap:.5rem; align-items:flex-end; flex-shrink:0;
 }
 #chat-input {
-    flex:1; padding:.6rem .875rem;
-    border:1px solid #e2e8f0; border-radius:.6rem;
-    font-family:inherit; font-size:.875rem; color:#111827;
+    flex:1; padding:.62rem .875rem;
+    background:#f8fafc;
+    border:1px solid #cbd5e1; border-radius:10px;
+    font-family:inherit; font-size:.875rem; color:#0f172a;
     resize:none; outline:none; max-height:100px;
-    transition:border-color .2s; line-height:1.4;
+    transition:border-color .2s, background .2s; line-height:1.4;
 }
-#chat-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px #3b82f620; }
+#chat-input:focus { background:#fff; border-color:var(--accent, #2563eb); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
 #chat-send {
-    width:38px; height:38px; border-radius:.5rem;
-    background:linear-gradient(135deg,#3b82f6,#6366f1);
+    width:40px; height:40px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent, #2563eb), var(--accent2, #4f46e5));
     border:none; color:#fff; cursor:pointer;
     display:grid; place-items:center; font-size:1rem;
-    transition:opacity .15s; flex-shrink:0;
+    transition:opacity .15s, transform .15s; flex-shrink:0;
 }
-#chat-send:hover { opacity:.88; }
-#chat-send:disabled { opacity:.4; cursor:not-allowed; }
+#chat-send:hover { opacity:.92; transform:translateY(-1px); }
+#chat-send:disabled { opacity:.4; cursor:not-allowed; transform:none; }
 </style>
 
-<button id="chat-fab" onclick="chatToggle()" title="EduBot AI">🤖</button>
+<button id="chat-fab" onclick="chatToggle()" title="Trợ lý EduBot AI">🤖</button>
 
 <div id="chat-window" class="hidden">
   <div class="chat-header">
     <div class="chat-avatar">🤖</div>
     <div style="flex:1;min-width:0">
       <div class="chat-hname">EduBot AI</div>
-      <div class="chat-hsub"><span class="online-dot"></span>Trợ lý học tập thông minh</div>
+      <div class="chat-hsub"><span class="online-dot"></span>Trợ lý học vụ thông minh</div>
     </div>
     <button class="chat-close" onclick="chatToggle()">✕</button>
   </div>
@@ -128,10 +135,9 @@
 
   <div class="chat-input-area">
     <textarea id="chat-input" rows="1"
-      placeholder="Nhập câu hỏi..."
+      placeholder="Hỏi về lịch học, điểm số, chuyên cần..."
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"
-      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'">
-    </textarea>
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
     <button id="chat-send" onclick="chatSend()">➤</button>
   </div>
 </div>
@@ -140,7 +146,7 @@
 (function(){
   const ROLE = "{{ current_user.role }}";
   const NAME = "{{ current_user.full_name }}";
-  let msgs    = [];   // conversation history [{role,content}]
+  let msgs    = [];
   let isOpen  = false;
   let busy    = false;
 
@@ -150,8 +156,8 @@
   };
 
   const WELCOME = ROLE === 'student'
-    ? `Xin chào **${NAME}**! 👋\nMình là EduBot — trợ lý AI của EduPortal.\nMình có thể giúp bạn tra điểm số, lịch học, tỷ lệ chuyên cần và nhiều hơn nữa. Bạn cần hỗ trợ gì?`
-    : `Xin chào thầy/cô **${NAME}**! 👋\nMình là EduBot — trợ lý AI của EduPortal.\nMình có thể hỗ trợ thầy/cô về lớp học, điểm danh, điểm số và các tính năng hệ thống.`;
+    ? `Xin chào **${NAME}**! 👋\nMình là **EduBot** — trợ lý AI cá nhân của bạn trên EduPortal.\nMình có thể tra cứu nhanh điểm số, GPA, lịch học hôm nay và tỷ lệ chuyên cần. Bạn muốn hỏi gì nào?`
+    : `Xin chào thầy/cô **${NAME}**! 👋\nMình là **EduBot** — trợ lý AI giảng dạy của EduPortal.\nMình có thể hỗ trợ tra cứu lịch giảng hôm nay, sĩ số lớp và tình hình chuyên cần.`;
 
   function now(){
     return new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
@@ -161,7 +167,7 @@
     return t
       .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
       .replace(/\*(.*?)\*/g,'<em>$1</em>')
-      .replace(/`(.*?)`/g,'<code style="background:#f1f5f9;padding:.1rem .3rem;border-radius:.25rem;font-size:.82rem">$1</code>')
+      .replace(/`(.*?)`/g,'<code style="background:#f1f5f9;padding:.1rem .35rem;border-radius:.25rem;font-size:.82rem">$1</code>')
       .replace(/\n/g,'<br>');
   }
 
@@ -184,7 +190,6 @@
 
   function hideTyping(){ document.getElementById('chat-typing')?.remove(); }
 
-  // Check API status khi mở lần đầu
   async function checkApiStatus(){
     try{
       const res = await fetch('/chatbot/api/status');
@@ -206,9 +211,9 @@
         );
         return false;
       }
-      const badge = {groq:' Groq',anthropic:' Claude',gemini:' Gemini'}[d.provider]||'🟢 AI';
+      const badge = {groq:'Groq AI',anthropic:'Claude AI',gemini:'Gemini AI'}[d.provider]||'AI';
       document.querySelector('.chat-hsub').innerHTML =
-        `<span class="online-dot"></span>${badge} · Sẵn sàng`;
+        `<span class="online-dot"></span>${badge} · Đang trực tuyến`;
       return true;
     }catch(e){ return true; }
   }
@@ -250,20 +255,10 @@
       } else {
         const errMsg = data.error||'Lỗi không xác định';
         addMsg('bot', '❌ '+errMsg, true);
-        // Nếu lỗi API key, hướng dẫn luôn
-        if(errMsg.includes('API key')||errMsg.includes('api_key')){
-          setTimeout(()=>addMsg('bot',
-            '🔧 Để sửa lỗi:\n'+
-            '1. Mở file `.env`\n'+
-            '2. Chọn AI_PROVIDER=groq hoặc AI_PROVIDER=anthropic\n'+
-            '3. Thêm key tương ứng: `GROQ_API_KEY=...` hoặc `ANTHROPIC_API_KEY=...`\n'+
-            '4. Restart Flask',
-          ),400);
-        }
       }
     } catch(e) {
       hideTyping();
-      addMsg('bot','❌ Không thể kết nối server. Kiểm tra Flask đang chạy không?', true);
+      addMsg('bot','❌ Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng.', true);
     }
 
     busy=false;

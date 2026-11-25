@@ -14,4 +14,7 @@ class Notification(db.Model):
     related_id   = db.Column(db.Integer)
     created_at   = db.Column(db.DateTime,    default=datetime.utcnow)
 
-    user = db.relationship('User', backref='notifications')
+    user = db.relationship(
+        'User',
+        backref=db.backref('notifications', cascade='all, delete-orphan', passive_deletes=True),
+    )

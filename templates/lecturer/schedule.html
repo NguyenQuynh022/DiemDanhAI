@@ -1,0 +1,317 @@
+{% extends "lecturer/layout.html" %}
+{% block title %}Thời khóa biểu giảng dạy — EduPortal{% endblock %}
+
+{% block extra_style %}
+.tkb-expanded-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  background: var(--surface);
+  margin-bottom: 0.85rem;
+}
+.tkb-expanded-week-bar {
+  background: #DFF0D8;
+  border: 1px solid #D6E9C6;
+  color: #3C763D;
+  border-radius: 5px;
+  padding: 0.72rem 1rem;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.tkb-cancel-block {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.tkb-cancel-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #5A738E;
+  margin-bottom: 0.35rem;
+}
+.tkb-cancel-list {
+  padding-left: 1.35rem;
+  font-size: 0.85rem;
+  color: #5A738E;
+  line-height: 1.65;
+}
+html[data-theme="dark"] .tkb-expanded-week-bar {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.38);
+  color: #6EE7B7;
+}
+{% endblock %}
+
+{% block content %}
+{% set days_full = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'] %}
+{% set days_vi   = ['HAI', 'BA', 'TƯ', 'NĂM', 'SÁU', 'BẢY', 'CN'] %}
+{% set clrs      = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6'] %}
+{% set is_detail = request.args.get('view') == 'detail' %}
+
+<div class="x-panel">
+
+  <!-- Header Row -->
+  <div class="x-title">
+    <h2>
+      {% if is_expanded %}
+        Thời khóa biểu giảng dạy {{ sem_heading }} - mở rộng tất cả Tuần
+      {% else %}
+        Thời khóa biểu giảng dạy - Hôm nay là {{ days_full[today.weekday()] }} - thuộc tuần học {{ global_week_num }}
+      {% endif %}
+    </h2>
+
+    <div style="display:flex;gap:.55rem;align-items:center;flex-wrap:wrap">
+      <form method="GET" style="margin:0">
+        {% if is_expanded %}
+          <input type="hidden" name="view" value="expanded">
+        {% else %}
+          <input type="hidden" name="week" value="{{ week_offset }}">
+          {% if is_detail %}<input type="hidden" name="view" value="detail">{% endif %}
+        {% endif %}
+        <select name="semester" class="form-control" style="padding:.38rem .75rem;font-size:.82rem;width:auto" onchange="this.form.submit()">
+          {% for sem_id, sem_name, year, _ in all_semesters|reverse %}
+          <option value="{{ sem_id }}" {% if selected_semester == sem_id %}selected{% endif %}>
+            {{ sem_name }} ({{ year }}–{{ year|int + 1 }})
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      {% if is_expanded %}
+        <a href="{{ url_for('lecturer.schedule', semester=selected_semester) }}" class="btn btn-primary btn-sm">
+          Thời khóa biểu Tuần thu gọn
+        </a>
+      {% else %}
+        {% if week_offset != 0 %}
+          <a href="?week=0{% if selected_semester %}&semester={{ selected_semester }}{% endif %}" class="btn btn-outline btn-sm">
+            Tuần hiện tại
+          </a>
+        {% endif %}
+        <a href="{{ url_for('lecturer.schedule', semester=selected_semester, view='expanded') }}" class="btn btn-primary btn-sm">
+          Thời khóa biểu Mở rộng
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if is_expanded %}
+    <!-- ══════════════════════════════════════════════════════════════════
+         CHẾ ĐỘ MỞ RỘNG TẤT CẢ CÁC TUẦN GIẢNG DẠY TRONG HỌC KỲ
+         ══════════════════════════════════════════════════════════════════ -->
+    {% for wk in all_weeks_data %}
+      <div class="tkb-expanded-card" id="week-{{ wk.week_num }}">
+        <div class="tkb-expanded-week-bar">
+          Tuần {{ wk.week_num }}{% if wk.week_start <= today <= wk.week_end %} (Tuần hiện tại){% endif %}
+        </div>
+
+        {% if wk.cancelled_list %}
+        <div class="tkb-cancel-block">
+          <div class="tkb-cancel-title">Báo nghỉ</div>
+          <ul class="tkb-cancel-list">
+            {% for csess, ccls in wk.cancelled_list %}
+              <li>
+                Nghỉ {{ ccls.course_name }} ({{ ccls.class_name }}) -
+                {{ current_user.full_name }} -
+                {{ csess.session_date.strftime('%d/%m/%Y') }}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="tkb-wrap" style="margin-bottom:1.85rem">
+        <div class="tkb-scroll">
+          <table class="tkb-table">
+            <thead>
+              <tr>
+                <th class="th-empty"></th>
+                {% for i in range(7) %}
+                {% set d = wk.week_start + timedelta(days=i) %}
+                <th class="th-day {% if d == today %}tcol{% endif %}">
+                  <div class="dname">{{ days_vi[i] }}</div>
+                  <div class="ddate">{{ d.strftime('%d/%m/%Y') }}</div>
+                </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for tiet in range(1, 11) %}
+              <tr>
+                <td class="td-tiet" style="height:34px;padding:.2rem !important">
+                  <div class="tnum" style="font-size:.74rem;font-weight:700;color:#475569">TIẾT {{ tiet }}</div>
+                </td>
+
+                {% for day_idx in range(7) %}
+                {% set d  = wk.week_start + timedelta(days=day_idx) %}
+                {% set ck = (day_idx, tiet) %}
+
+                {% if ck in wk.timetable %}
+                  {% set sess, cls, span = wk.timetable[ck] %}
+                  <td class="td-sess {% if d == today %}tcol{% endif %}"
+                      rowspan="{{ span }}"
+                      style="height:{{ span * 38 }}px">
+                    <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id, session_id=sess.id) }}"
+                       style="display:block;height:100%">
+                      <div class="sess-block {{ clrs[(cls.id) % clrs|length] }}"
+                           style="min-height:{{ span * 38 }}px;padding:.45rem .4rem"
+                           title="Nhấn để điểm danh lớp {{ cls.class_name }}">
+                        <div class="sname">{{ cls.course_name }} ({{ cls.class_name }})</div>
+                        <div class="sroom">{{ sess.room or cls.room or 'TBD' }}</div>
+                      </div>
+                    </a>
+                  </td>
+                {% elif (day_idx, tiet) not in wk.occupied %}
+                  <td class="td-empty {% if d == today %}tcol{% endif %}" style="height:34px"></td>
+                {% endif %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+
+  {% else %}
+    <!-- ══════════════════════════════════════════════════════════════════
+         CHẾ ĐỘ LỊCH DẠY THEO TUẦN THU GỌN (MẶC ĐỊNH)
+         ══════════════════════════════════════════════════════════════════ -->
+    <div class="tkb-banner-stack">
+      <div class="tkb-week-box">
+        {% if week_num > 1 %}
+          <a href="?week={{ week_offset - 1 }}{% if selected_semester %}&semester={{ selected_semester }}{% endif %}">
+            &laquo; Tuần {{ week_num - 1 }}
+          </a>
+        {% endif %}
+        <span class="cur-wk">TUẦN THỨ {{ week_num }}</span>
+        {% if week_num < 25 %}
+          <a href="?week={{ week_offset + 1 }}{% if selected_semester %}&semester={{ selected_semester }}{% endif %}">
+            Tuần {{ week_num + 1 }} &raquo;
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="tkb-note-box">
+        Hiện nay là tuần học thứ {{ global_week_num }} (Tuần đang xem: {{ week_start.strftime('%d/%m/%Y') }} – {{ week_end.strftime('%d/%m/%Y') }}). Nhấn trực tiếp vào ô môn học để mở trang Điểm danh lớp đó.
+      </div>
+    </div>
+
+    {% if week_cancelled %}
+    <div class="tkb-expanded-card" style="margin-bottom:1rem">
+      <div class="tkb-cancel-title">Báo nghỉ trong tuần</div>
+      <ul class="tkb-cancel-list">
+        {% for csess, ccls in week_cancelled %}
+          <li>
+            Nghỉ {{ ccls.course_name }} ({{ ccls.class_name }}) -
+            {{ current_user.full_name }} -
+            {{ csess.session_date.strftime('%d/%m/%Y') }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="tkb-wrap">
+      <div class="tkb-scroll">
+        <table class="tkb-table">
+          <thead>
+            <tr>
+              <th class="th-empty"></th>
+              {% for i in range(7) %}
+              {% set d = week_start + timedelta(days=i) %}
+              <th class="th-day {% if d == today %}tcol{% endif %}">
+                <div class="dname">{{ days_vi[i] }}</div>
+                <div class="ddate">{{ d.strftime('%d/%m/%Y') }}</div>
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for tiet in range(1, 11) %}
+            {% set tinfo = tiet_map[tiet] %}
+            <tr>
+              <td class="td-tiet">
+                <div class="tnum">TIẾT</div>
+                <div class="t-label">{{ tiet }}</div>
+                <div class="ttime">{{ tinfo[0].strftime('%H:%M') }}–{{ tinfo[1].strftime('%H:%M') }}</div>
+              </td>
+
+              {% for day_idx in range(7) %}
+              {% set d  = week_start + timedelta(days=day_idx) %}
+              {% set ck = (day_idx, tiet) %}
+
+              {% if ck in timetable %}
+                {% set sess, cls, span = timetable[ck] %}
+                <td class="td-sess {% if d == today %}tcol{% endif %}"
+                    rowspan="{{ span }}"
+                    style="height:{{ span * 52 }}px">
+                  <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id, session_id=sess.id) }}"
+                     style="display:block;height:100%">
+                    <div class="sess-block {{ clrs[(cls.id) % clrs|length] }}"
+                         title="Nhấn để điểm danh lớp {{ cls.class_name }} ({{ sess.start_time.strftime('%H:%M') }}–{{ sess.end_time.strftime('%H:%M') }})">
+                      <div class="sname">{{ cls.course_name }} ({{ cls.class_name }})</div>
+                      <div class="sroom">{{ sess.room or cls.room or 'TBD' }}</div>
+                      <div class="sgrp">{{ sess.start_time.strftime('%H:%M') }}–{{ sess.end_time.strftime('%H:%M') }} · Nhấn để điểm danh</div>
+                    </div>
+                  </a>
+                </td>
+              {% elif (day_idx, tiet) not in occupied %}
+                <td class="td-empty {% if d == today %}tcol{% endif %}"></td>
+              {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tkb-detail-panel" style="margin-top:1.75rem;display:{% if is_detail %}block{% else %}none{% endif %}">
+      <div class="section-bar teal">
+        <span>📋 Danh sách lớp học phần giảng dạy trong kỳ ({{ selected_semester }})</span>
+      </div>
+      <div class="vku-table-wrap">
+        <table class="vku-table">
+          <thead>
+            <tr>
+              <th style="width:48px">#</th>
+              <th>Mã lớp</th>
+              <th>Tên học phần</th>
+              <th>Phòng học</th>
+              <th>Lịch cố định</th>
+              <th style="width:160px">Quản lý</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if all_classes %}
+              {% for cls in all_classes %}
+              {% set info = cls.schedule_info or {} %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td><strong>{{ cls.class_name }}</strong></td>
+                <td style="font-weight:600;color:var(--text)">{{ cls.course_name }}</td>
+                <td><strong>{{ cls.room or '—' }}</strong></td>
+                <td>
+                  {% if info.get('day') is not none %}
+                    Thứ {{ ['Hai','Ba','Tư','Năm','Sáu','Bảy','CN'][info.get('day', 0)] }} ·
+                    Tiết {{ info.get('tiet_start', 1) }}→{{ info.get('tiet_start', 1) + info.get('num_tiet', 2) - 1 }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('attendance.lecturer_attendance', class_id=cls.id) }}" class="btn-teal-action">Điểm danh</a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="6" style="text-align:center;padding:1.25rem">Không có lớp giảng dạy trong học kỳ này.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "trained": true,
+  "algorithm": "SFace-128D ONNX + RBF-SVM Classifier + Cosine Prototype Verification",
+  "trained_at": "2026-11-25 19:06:33",
+  "num_students": 3,
+  "num_raw_samples": 3,
+  "num_augmented_samples": 42,
+  "accuracy": 100.0,
+  "model_path": "D:\\Documents\\Project\\ĐACN1_AIDiemDanh\\AI_PROJECTS\\2.0\\attendance_system\\attendance_system\\ai_models\\trained\\face_classifier.pkl",
+  "embeddings_csv": "D:\\Documents\\Project\\ĐACN1_AIDiemDanh\\AI_PROJECTS\\2.0\\attendance_system\\attendance_system\\ai_models\\datasets\\face_embeddings.csv"
+}

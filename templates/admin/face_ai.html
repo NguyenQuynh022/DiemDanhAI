@@ -1,0 +1,177 @@
+{% extends "admin/layout.html" %}
+{% block title %}Quản lý Dữ liệu Khuôn mặt & Huấn luyện AI — Admin{% endblock %}
+{% block page_title %}🤖 Quản lý CSDL Khuôn mặt, Dataset (.csv) &amp; Huấn luyện Model AI{% endblock %}
+
+{% block content %}
+<!-- Top Banner & One-Click Train Action -->
+<div class="page-hero" style="margin-bottom:1.35rem">
+  <div>
+    <div class="page-hero-title">Hệ thống Nhận diện Khuôn mặt Sâu &amp; Chống giả mạo (Anti-Spoofing)</div>
+    <div class="page-hero-sub">
+      Mọi dữ liệu sinh viên đăng ký khuôn mặt được lưu trực tiếp trong MySQL (<code>face_data</code>, <code>face_samples</code>), đồng bộ tự động ra file <code>.csv</code> và huấn luyện bộ phân loại <strong>YuNet + SFace 128D + RBF-SVM</strong>.
+    </div>
+  </div>
+  <div class="page-hero-actions">
+    <form method="POST" action="{{ url_for('admin.train_face_ai') }}" style="margin:0">
+      <button type="submit" class="btn-glass" style="cursor:pointer;font-size:.88rem;padding:.65rem 1.2rem">
+        ⚡ Đồng bộ CSV &amp; Huấn luyện lại Model AI ngay
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- KPI Strip -->
+<div class="stats-grid" style="margin-bottom:1.35rem">
+  <div class="stat-card">
+    <div class="stat-icon blue">🗄️</div>
+    <div>
+      <div class="stat-val">{{ face_records|length }}/{{ total_students }}</div>
+      <div class="stat-lbl">Hồ sơ khuôn mặt trong CSDL</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon indigo">📄</div>
+    <div>
+      <div class="stat-val">{{ sync_info.total_samples }}</div>
+      <div class="stat-lbl">Mẫu vector 128D trong CSV</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">🧠</div>
+    <div>
+      <div class="stat-val">{% if backend_info.model_trained %}{{ backend_info.cv_accuracy or 100 }}%{% else %}—{% endif %}</div>
+      <div class="stat-lbl">Độ chính xác Model SVM</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple">🛡️</div>
+    <div>
+      <div class="stat-val">Bật</div>
+      <div class="stat-lbl">Liveness Chống ảnh giả / màn hình</div>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Dataset Export & Model Info Card -->
+<div class="card" style="margin-bottom:1.35rem">
+  <div class="card-title">
+    📂 Bộ tệp dữ liệu huấn luyện (.csv) &amp; File Model (.pkl)
+    {% if backend_info.trained_at %}
+      <span class="badge badge-green" style="margin-left:auto">Huấn luyện gần nhất: {{ backend_info.trained_at }}</span>
+    {% endif %}
+  </div>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <div style="font-size:.85rem;color:var(--text-secondary);line-height:1.6">
+      • <code>ai_models/datasets/face_embeddings.csv</code>: Vector đặc trưng 128 chiều (<code>f0..f127</code>) của từng góc khuôn mặt dùng trực tiếp để train Model.<br>
+      • <code>ai_models/datasets/face_registry.csv</code>: Danh sách sinh viên đã đăng ký khuôn mặt và trạng thái nạp vào Model.<br>
+      • <code>ai_models/datasets/attendance_ai_logs.csv</code>: Nhật ký kiểm định AI và các lần chặn giả mạo ảnh tĩnh/màn hình.
+    </div>
+    <div style="display:flex;gap:.55rem;flex-wrap:wrap">
+      <a href="{{ url_for('admin.download_face_csv', csv_kind='embeddings') }}" class="btn btn-primary btn-sm">⬇️ Tải face_embeddings.csv</a>
+      <a href="{{ url_for('admin.download_face_csv', csv_kind='registry') }}" class="btn btn-outline btn-sm">⬇️ Tải face_registry.csv</a>
+      <a href="{{ url_for('admin.download_face_csv', csv_kind='logs') }}" class="btn btn-outline btn-sm">⬇️ Tải attendance_ai_logs.csv</a>
+    </div>
+  </div>
+</div>
+
+<!-- Registered Student Biometric Profiles in MySQL -->
+<div class="card" style="margin-bottom:1.35rem">
+  <div class="card-title">👤 Dữ liệu khuôn mặt sinh viên đã lưu trong Cơ sở dữ liệu MySQL ({{ face_records|length }})</div>
+  {% if face_records %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>MSSV</th>
+          <th>Họ và tên sinh viên</th>
+          <th>Mô hình Vector</th>
+          <th style="text-align:center">Số góc mẫu (DB)</th>
+          <th style="text-align:center">Điểm Liveness ĐK</th>
+          <th style="text-align:center">Trạng thái Model</th>
+          <th>Cập nhật lần cuối</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fd, stu in face_records %}
+        <tr>
+          <td><strong style="color:var(--accent-text)">{{ stu.student_code or '—' }}</strong></td>
+          <td>
+            <div style="font-weight:600;color:var(--text)">{{ stu.full_name }}</div>
+            <div style="font-size:.74rem;color:var(--muted)">@{{ stu.username }}</div>
+          </td>
+          <td>
+            {% if fd.embedding_model == 'sface_onnx_128d' %}
+              <span class="badge badge-purple">SFace 128D ONNX</span>
+            {% else %}
+              <span class="badge badge-amber">{{ fd.embedding_model }} (Cần quét lại 128D)</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center"><strong>{{ sample_counts.get(stu.id, fd.image_count or 1) }}</strong> mẫu</td>
+          <td style="text-align:center">
+            {% if fd.liveness_score %}
+              <strong style="color:#059669">{{ '%.0f%%'|format(fd.liveness_score * 100) }}</strong>
+            {% else %}—{% endif %}
+          </td>
+          <td style="text-align:center">
+            {% if fd.is_trained and fd.embedding_model == 'sface_onnx_128d' %}
+              <span class="badge badge-green">✓ Đã train vào Model</span>
+            {% else %}
+              <span class="badge badge-gray">Chưa chuẩn 128D</span>
+            {% endif %}
+          </td>
+          <td>{{ fd.updated_at.strftime('%d/%m/%Y %H:%M') if fd.updated_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">📷</div><div class="empty-text">Chưa có sinh viên nào đăng ký khuôn mặt trong CSDL</div></div>
+  {% endif %}
+</div>
+
+<!-- Recent Anti-Spoofing & AI Verification Logs -->
+<div class="card">
+  <div class="card-title">🛡️ Nhật ký kiểm định Điểm danh AI &amp; Chống giả mạo gần đây</div>
+  {% if recent_ai_logs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Sinh viên</th>
+          <th>Lớp</th>
+          <th style="text-align:center">Cosine 128D</th>
+          <th style="text-align:center">Xác suất SVM</th>
+          <th style="text-align:center">Liveness</th>
+          <th>Kết quả</th>
+          <th>Chi tiết kiểm định</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lg in recent_ai_logs %}
+        <tr>
+          <td style="white-space:nowrap;font-size:.8rem">{{ lg.timestamp }}</td>
+          <td><strong>{{ lg.full_name }}</strong> ({{ lg.student_code }})</td>
+          <td>{{ lg.class_name }}</td>
+          <td style="text-align:center">{{ lg.cosine_score }}</td>
+          <td style="text-align:center">{{ lg.model_prob }}</td>
+          <td style="text-align:center"><strong>{{ lg.liveness_score }}</strong></td>
+          <td>
+            {% if lg.result == 'ACCEPTED' %}
+              <span class="badge badge-green">✓ Hợp lệ</span>
+            {% else %}
+              <span class="badge badge-red">🚫 Từ chối / Chặn giả</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;color:var(--text-secondary)">{{ lg.note }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">🛡️</div><div class="empty-text">Chưa có bản ghi kiểm định điểm danh AI mới</div></div>
+  {% endif %}
+</div>
+{% endblock %}

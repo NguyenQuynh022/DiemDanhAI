@@ -20,8 +20,16 @@ class Grade(db.Model):
 
     __table_args__ = (db.UniqueConstraint('student_id', 'class_id', name='uq_grade'),)
 
-    student   = db.relationship('User', foreign_keys=[student_id], backref='grades')
-    class_ref = db.relationship('Class', foreign_keys=[class_id],  backref='grades')
+    student   = db.relationship(
+        'User',
+        foreign_keys=[student_id],
+        backref=db.backref('grades', cascade='all, delete-orphan', passive_deletes=True),
+    )
+    class_ref = db.relationship(
+        'Class',
+        foreign_keys=[class_id],
+        backref=db.backref('grades', cascade='all, delete-orphan', passive_deletes=True),
+    )
 
     def calc_total(self, formula=None):
         """Tính tổng kết theo công thức của lớp, hoặc mặc định 20/30/50"""

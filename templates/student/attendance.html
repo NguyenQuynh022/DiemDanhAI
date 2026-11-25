@@ -1,52 +1,112 @@
 {% extends "student/layout.html" %}
-{% block title %}Lịch sử điểm danh{% endblock %}
-{% block page_title %}✅ Lịch sử điểm danh{% endblock %}
+{% block title %}Lịch sử chuyên cần{% endblock %}
+{% block page_title %}📋 Lịch sử điểm danh &amp; Chuyên cần{% endblock %}
+
 {% block content %}
-<div class="card" style="margin-bottom:1rem">
-  <form method="GET" style="display:flex;gap:1rem;align-items:flex-end">
-    <div class="form-group" style="margin:0;flex:1">
-      <label class="form-label">Lọc theo lớp</label>
-      <select name="class_id" class="form-control" onchange="this.form.submit()">
-        <option value="">Tất cả lớp</option>
+{% set total_rec = records|length %}
+{% set present_rec = records|map(attribute=0)|selectattr('status', 'in', ['present', 'late'])|list|length %}
+{% set absent_rec  = records|map(attribute=0)|selectattr('status', 'eq', 'absent')|list|length %}
+{% set att_rate    = ((present_rec / total_rec * 100)|round(1)) if total_rec > 0 else 0 %}
+
+<!-- Attendance Stats Strip -->
+<div class="stats-grid" style="margin-bottom:1.25rem">
+  <div class="stat-card">
+    <div class="stat-icon blue">📋</div>
+    <div>
+      <div class="stat-val">{{ total_rec }}</div>
+      <div class="stat-lbl">Tổng buổi đã ghi nhận</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div>
+      <div class="stat-val">{{ present_rec }}</div>
+      <div class="stat-lbl">Số buổi có mặt / đi trễ</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon rose">❌</div>
+    <div>
+      <div class="stat-val">{{ absent_rec }}</div>
+      <div class="stat-lbl">Số buổi vắng mặt</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple">📈</div>
+    <div>
+      <div class="stat-val">{{ att_rate }}%</div>
+      <div class="stat-lbl">Tỷ lệ chuyên cần</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter & Records Table -->
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.15rem">
+    <div style="font-family:var(--head);font-size:1rem;font-weight:700">
+      🗂 Chi tiết lịch sử điểm danh ({{ total_rec }} bản ghi)
+    </div>
+    <form method="GET" style="display:flex;gap:.5rem;align-items:center">
+      <select name="class_id" class="form-control" style="padding:.48rem .85rem;font-size:.85rem;min-width:240px;width:auto" onchange="this.form.submit()">
+        <option value="">Tất cả lớp học phần</option>
         {% for cls in my_classes %}
-        <option value="{{ cls.id }}" {% if selected_class == cls.id %}selected{% endif %}>{{ cls.course_name }} ({{ cls.class_name }})</option>
+        <option value="{{ cls.id }}" {% if selected_class == cls.id %}selected{% endif %}>
+          {{ cls.course_name }} ({{ cls.class_name }} · {{ cls.semester }})
+        </option>
         {% endfor %}
       </select>
-    </div>
-  </form>
-</div>
-<div class="card">
-  <div class="card-title">📋 Danh sách điểm danh ({{ records|length }} bản ghi)</div>
+      {% if selected_class %}
+        <a href="{{ url_for('student.attendance_history') }}" class="btn btn-outline btn-sm">✕ Bỏ lọc</a>
+      {% endif %}
+    </form>
+  </div>
+
   {% if records %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Ngày</th><th>Lớp</th><th>Trạng thái</th><th>Thời gian check-in</th><th>Phương thức</th><th>Độ tin cậy</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Ngày học</th>
+          <th>Học phần &amp; Lớp</th>
+          <th>Trạng thái</th>
+          <th>Giờ ghi nhận</th>
+          <th>Hình thức</th>
+          <th>Độ khớp AI</th>
+        </tr>
+      </thead>
       <tbody>
         {% for att, cls in records %}
         <tr>
-          <td>{{ att.session_date.strftime('%d/%m/%Y') }}</td>
-          <td><span style="font-weight:600">{{ cls.course_name }}</span><br><span style="font-size:.75rem;color:var(--muted)">{{ cls.class_name }}</span></td>
+          <td style="font-weight:600;color:var(--text)">📅 {{ att.session_date.strftime('%d/%m/%Y') }}</td>
           <td>
-            {% if att.status == 'present' %}<span class="badge badge-green">Có mặt</span>
-            {% elif att.status == 'absent' %}<span class="badge badge-red">Vắng</span>
-            {% elif att.status == 'late' %}<span class="badge badge-amber">Trễ</span>
-            {% elif att.status == 'excused' %}<span class="badge badge-blue">Có phép</span>
+            <div style="font-weight:600;color:var(--text)">{{ cls.course_name }}</div>
+            <div style="font-size:.74rem;color:var(--muted)">{{ cls.class_name }} · {{ cls.semester }}</div>
+          </td>
+          <td>
+            {% if att.status == 'present' %}<span class="badge badge-green">✓ Có mặt</span>
+            {% elif att.status == 'absent' %}<span class="badge badge-red">✕ Vắng mặt</span>
+            {% elif att.status == 'late' %}<span class="badge badge-amber">⏰ Đi trễ</span>
+            {% elif att.status == 'excused' %}<span class="badge badge-blue">📋 Có phép</span>
             {% else %}<span class="badge badge-gray">Lỗi</span>{% endif %}
           </td>
           <td>{{ att.checkin_time.strftime('%H:%M:%S') if att.checkin_time else '—' }}</td>
           <td>
-            {% if att.method == 'face' %}🤖 AI
-            {% elif att.method == 'manual' %}✏️ Thủ công
-            {% else %}📱 QR{% endif %}
+            {% if att.method == 'face' %}<span class="badge badge-purple">🤖 Nhận diện AI</span>
+            {% elif att.method == 'manual' %}<span class="badge badge-gray">✏️ Giảng viên chấm</span>
+            {% else %}<span class="badge badge-blue">📱 Mã QR</span>{% endif %}
           </td>
-          <td>{{ '%.1f%%'|format(att.face_score * 100) if att.face_score else '—' }}</td>
+          <td>
+            {% if att.face_score %}
+              <strong style="color:#059669">{{ '%.1f%%'|format(att.face_score * 100) }}</strong>
+            {% else %}—{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% else %}
-    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có bản ghi điểm danh nào</div></div>
+    <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Chưa có bản ghi chuyên cần nào</div></div>
   {% endif %}
 </div>
 {% endblock %}

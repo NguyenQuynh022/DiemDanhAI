@@ -1,0 +1,72 @@
+{% extends "portal/home.html" %}
+{% block title %}{{ ann.title }} — EduPortal{% endblock %}
+
+{% block hero_section %}
+<section class="hero-banner" style="padding:2.25rem 0 2.5rem">
+  <div class="hero-grid-overlay"></div>
+  <div class="container" style="position:relative;z-index:1">
+    <a href="{{ url_for('auth.portal_home') }}" style="display:inline-flex;align-items:center;gap:.45rem;color:#93c5fd;font-weight:600;font-size:.9rem;margin-bottom:1rem">
+      ← Quay lại Bảng tin Đào tạo
+    </a>
+    <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin-bottom:.75rem">
+      <span class="tag-chip" style="background:rgba(255,255,255,.15);color:#fff;padding:.25rem .75rem;font-size:.76rem">
+        {{ ann.category_label }}
+      </span>
+      {% if ann.is_new %}<span class="tag-chip tag-new">MỚI</span>{% endif %}
+      <span style="color:rgba(226,232,240,.8);font-size:.86rem">
+        📅 Đăng ngày {{ ann.created_at.strftime('%d/%m/%Y lúc %H:%M') }} · 🏛️ {{ ann.author.full_name if ann.author else 'Phòng Đào tạo' }}
+      </span>
+    </div>
+    <h1 style="font-family:var(--head);font-size:clamp(1.5rem,2.4vw,2.05rem);font-weight:800;line-height:1.35;max-width:1100px">
+      {{ ann.title }}
+    </h1>
+  </div>
+</section>
+{% endblock %}
+
+{% block portal_main %}
+<div class="boards-layout" style="margin-top:2.25rem">
+  <article class="board-card" style="padding:2.25rem 2.5rem">
+    <div style="font-size:1.05rem;color:var(--text-sub);line-height:1.9;white-space:pre-line">
+      {{ ann.content or ann.title }}
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <a href="{{ url_for('auth.portal_home') }}" class="btn-portal btn-portal-outline">
+        ← Xem các thông báo khác
+      </a>
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.announcements_list') }}" class="btn-portal btn-portal-admin">
+          ✏️ Chỉnh sửa trong trang Quản trị
+        </a>
+      {% endif %}
+    </div>
+  </article>
+
+  {% if related %}
+  <aside class="board-card">
+    <div class="board-head">
+      <div class="board-title-wrap">
+        <div class="board-accent-bar"></div>
+        <div>
+          <h2 style="font-size:1.15rem">Thông báo liên quan</h2>
+        </div>
+      </div>
+    </div>
+    <div class="ann-feed">
+      {% for r in related %}
+      <a href="{{ url_for('auth.announcement_detail', ann_id=r.id) }}" class="ann-card">
+        <div class="ann-date-box">
+          <div class="dd">{{ r.created_at.strftime('%d') }}</div>
+          <div class="mm">Thg {{ r.created_at.strftime('%m') }}</div>
+        </div>
+        <div class="ann-body">
+          <div class="ann-title" style="font-size:.94rem">{{ r.title }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

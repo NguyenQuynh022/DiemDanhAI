@@ -1,90 +1,173 @@
 {% extends "student/layout.html" %}
-{% block title %}Điểm danh AI{% endblock %}
-{% block page_title %}🤖 Điểm danh bằng khuôn mặt{% endblock %}
+{% block title %}Điểm danh AI Chống giả mạo — EduPortal{% endblock %}
 
 {% block extra_style %}
-.camera-wrap{position:relative;width:100%;max-width:480px;margin:0 auto;border-radius:.75rem;overflow:hidden;background:#000;aspect-ratio:4/3}
-#video{width:100%;height:100%;object-fit:cover;display:block}
-.face-guide{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);
-  width:200px;height:250px;border:3px solid rgba(59,130,246,.9);border-radius:50%;
-  box-shadow:0 0 0 9999px rgba(0,0,0,.45);animation:pb 1.8s infinite}
-@keyframes pb{0%,100%{border-color:rgba(59,130,246,.9)}50%{border-color:rgba(99,102,241,1)}}
-.cam-status{position:absolute;bottom:.75rem;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.7);color:#fff;padding:.35rem .9rem;border-radius:99px;
-  font-size:.8rem;font-weight:500;white-space:nowrap}
-#canvas{display:none}
-.session-card{border:1px solid #e2e8f0;border-radius:.6rem;padding:1rem;margin-bottom:.75rem;
-  cursor:pointer;transition:border-color .2s,background .2s;display:flex;align-items:center;gap:1rem}
-.session-card:hover:not(.disabled):not(.checked){background:#eff6ff;border-color:#93c5fd}
-.session-card.selected{background:#dbeafe;border-color:#3b82f6;border-width:2px}
-.session-card.disabled{cursor:not-allowed;opacity:.75;background:#f8fafc;border-color:#e5e7eb}
-.session-card.checked{background:#dcfce7;border-color:#86efac;cursor:default}
-.sess-time{text-align:center;min-width:56px}
-.sess-time .t{font-size:.8rem;font-weight:700;color:#3b82f6}
-.sess-time .r{font-size:.7rem;color:#6b7280}
-.result-box{padding:1rem;border-radius:.5rem;font-size:.9rem;font-weight:600;text-align:center;margin-top:1rem;display:none}
-.result-ok {background:#dcfce7;color:#15803d;border:1px solid #86efac}
-.result-err{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
-.score-bar{height:8px;border-radius:4px;background:#e2e8f0;overflow:hidden;margin-top:.5rem}
-.score-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .5s}
-/* Pulse khi session vừa mở */
-@keyframes openPulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}100%{box-shadow:0 0 0 12px rgba(59,130,246,0)}}
-.session-card.just-opened{animation:openPulse .6s ease-out 3}
-/* Toast thông báo */
-#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
-  background:#1e293b;color:#fff;padding:.65rem 1.25rem;border-radius:.5rem;
-  font-size:.875rem;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
-#toast.show{opacity:1}
+.camera-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0f172a;
+  aspect-ratio: 4/3;
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border);
+}
+#video { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+.face-guide {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%);
+  width: 205px; height: 260px;
+  border: 3px dashed rgba(96, 165, 250, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.48);
+  animation: pb 2s infinite;
+  pointer-events: none;
+}
+@keyframes pb { 0%,100%{border-color:rgba(96,165,250,.9)} 50%{border-color:rgba(52,211,153,1)} }
+.liveness-banner {
+  position: absolute; top: 0.85rem; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff; padding: 0.42rem 1.1rem; border-radius: 99px;
+  font-size: 0.82rem; font-weight: 700; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.42);
+  display: none; white-space: nowrap; z-index: 5;
+}
+.cam-status {
+  position: absolute; bottom: 0.85rem; left: 50%; transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(6px);
+  color: #fff; padding: 0.38rem 1rem; border-radius: 99px;
+  font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+}
+#canvas { display: none; }
+
+.session-card {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--surface);
+}
+.session-card:hover:not(.disabled):not(.checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+.session-card.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+.session-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  background: var(--surface2);
+}
+.session-card.checked {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  cursor: default;
+}
+.sess-time {
+  text-align: center;
+  min-width: 58px;
+  padding: 0.4rem 0.45rem;
+  background: var(--surface2);
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+.sess-time .t { font-family: var(--head); font-size: 0.82rem; font-weight: 700; color: var(--accent-text); }
+.sess-time .r { font-size: 0.68rem; color: var(--muted); }
+
+.result-box {
+  padding: 0.9rem 1rem; border-radius: 12px; font-size: 0.86rem;
+  font-weight: 600; text-align: center; margin-top: 1rem; display: none; line-height: 1.5;
+}
+.result-ok  { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+.result-err { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.score-bar  { height: 8px; border-radius: 99px; background: var(--surface3); overflow: hidden; margin-top: 0.35rem; }
+.score-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.5s; }
+
+@keyframes openPulse { 0%{box-shadow:0 0 0 0 rgba(37,99,235,.45)} 100%{box-shadow:0 0 0 14px rgba(37,99,235,0)} }
+.session-card.just-opened { animation: openPulse 0.65s ease-out 3; }
+
+#toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: #0f172a; color: #fff; padding: 0.75rem 1.35rem; border-radius: 12px;
+  font-size: 0.86rem; font-weight: 600; z-index: 999; opacity: 0;
+  transition: opacity 0.3s; pointer-events: none; box-shadow: var(--shadow-lg);
+}
+#toast.show { opacity: 1; }
 {% endblock %}
 
 {% block content %}
 <div id="toast"></div>
 
-<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start">
+<div class="grid-checkin-sv">
 
-  <!-- Left: Camera -->
+  <!-- Left: Live Anti-Spoofing AI Scanner -->
   <div>
     {% if not has_face %}
-    <div style="background:#fef9c3;border:1px solid #fde047;border-radius:.6rem;padding:.875rem 1rem;margin-bottom:1rem;font-size:.875rem;color:#713f12;display:flex;align-items:center;gap:.75rem">
-      ⚠️ <span>Bạn chưa đăng ký khuôn mặt. <a href="{{ url_for('attendance.register_face_page') }}" style="color:#d97706;font-weight:700">Đăng ký ngay →</a></span>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:12px;padding:.95rem 1.15rem;margin-bottom:1.1rem;font-size:.86rem;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+      <span>⚠️ <strong>Bạn chưa đăng ký mẫu khuôn mặt chuẩn 128D AI trong CSDL.</strong> Hãy đăng ký 5 góc mặt thật trước khi điểm danh!</span>
+      <a href="{{ url_for('attendance.register_face_page') }}" class="btn btn-primary btn-sm">📷 Đăng ký ngay →</a>
     </div>
     {% endif %}
 
     <div class="card">
-      <div class="card-title">📷 Camera</div>
+      <div class="card-title">
+        📷 Quét sinh trắc học người thật (Liveness Anti-Spoofing)
+        <span class="badge badge-green" style="margin-left:auto">🛡️ Chống ảnh giả / màn hình</span>
+      </div>
+
+      <div style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.85rem;background:var(--accent-soft);border:1px solid var(--accent-border);padding:.6rem .9rem;border-radius:8px">
+        💡 <strong>Hướng dẫn xác thực người thật:</strong> Khi nhấn điểm danh, hãy <strong>nhìn thẳng rồi hơi nghiêng nhẹ đầu sang trái/phải</strong> theo thanh hướng dẫn trên camera (hệ thống ghi chuỗi 5 khung hình sống liên tiếp, tự động từ chối ảnh chụp hoặc màn hình điện thoại).
+      </div>
+
       <div class="camera-wrap">
         <video id="video" autoplay muted playsinline></video>
         <div class="face-guide"></div>
-        <div class="cam-status" id="cam-status">Đang khởi động...</div>
+        <div class="liveness-banner" id="liveness-banner">Nhìn thẳng vào khung...</div>
+        <div class="cam-status" id="cam-status">Đang khởi động camera...</div>
       </div>
       <canvas id="canvas"></canvas>
 
-      <div style="margin-top:1rem;display:flex;gap:.75rem;justify-content:center">
-        <button id="checkin-btn" class="btn btn-primary" style="font-size:1rem;padding:.7rem 2rem"
-                onclick="doCheckin()" {% if not has_face %}disabled{% endif %}>
-          🤖 Điểm danh ngay
+      <div style="margin-top:1.15rem;display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+        <button id="checkin-btn" class="btn btn-primary" style="font-size:.95rem;padding:.72rem 1.85rem"
+                onclick="doLiveCheckin()" {% if not has_face %}disabled{% endif %}>
+          🤖 Quét người thật &amp; Xác nhận Điểm danh AI
         </button>
-        <button class="btn btn-outline" onclick="startCamera()">🔄</button>
+        <button class="btn btn-outline" onclick="startCamera()" title="Làm mới Camera">🔄 Làm mới Camera</button>
       </div>
 
       <div id="result-box" class="result-box"></div>
 
-      <div id="score-wrap" style="display:none;margin-top:.5rem">
-        <div style="display:flex;justify-content:space-between;font-size:.78rem;color:#6b7280;margin-bottom:.25rem">
-          <span>Độ khớp khuôn mặt</span>
+      <div id="score-wrap" style="display:none;margin-top:.75rem;padding:.75rem 1rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;color:var(--text-secondary)">
+          <span>Độ khớp Model AI (SFace 128D + SVM)</span>
           <span id="score-text">0%</span>
         </div>
         <div class="score-bar"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;color:var(--text-secondary);margin-top:.55rem">
+          <span>Chỉ số người thật (Liveness Anti-Spoofing)</span>
+          <span id="live-text">0%</span>
+        </div>
+        <div class="score-bar"><div class="score-fill" id="live-fill" style="width:0%"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- Right: Sessions -->
+  <!-- Right: Today's Sessions & Trained Model Info -->
   <div>
     <div class="card">
       <div class="card-title">
-        📅 Buổi học hôm nay
-        <span style="margin-left:auto;font-size:.8rem;color:var(--muted);font-weight:400">{{ today.strftime('%d/%m/%Y') }}</span>
+        📅 Ca học hôm nay
+        <span class="badge badge-blue" style="margin-left:auto">{{ today.strftime('%d/%m/%Y') }}</span>
       </div>
 
       {% if sessions_today %}
@@ -107,63 +190,69 @@
               <div class="t">{{ sess.start_time.strftime('%H:%M') }}</div>
               <div class="r">{{ sess.end_time.strftime('%H:%M') }}</div>
             </div>
-            <div style="flex:1">
-              <div style="font-weight:600;font-size:.875rem">{{ cls.course_name }}</div>
-              <div style="font-size:.78rem;color:#6b7280">{{ cls.class_name }} · {{ sess.room or cls.room or 'TBD' }}</div>
-              <div class="sess-status-label" style="font-size:.75rem;margin-top:.25rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:.88rem;color:var(--text)">{{ cls.course_name }}</div>
+              <div style="font-size:.76rem;color:var(--muted);margin-top:1px">{{ cls.class_name }} · 🏫 {{ sess.room or cls.room or 'TBD' }}</div>
+              <div class="sess-status-label" style="font-size:.75rem;font-weight:600;margin-top:.28rem">
                 {% if is_checked %}
-                  <span style="color:#15803d">✓ Đã điểm danh</span>
+                  <span style="color:#059669">✓ Đã điểm danh thành công</span>
                 {% elif sess.status == 'ongoing' %}
-                  <span style="color:#16a34a">🟢 Đang mở điểm danh</span>
+                  <span style="color:#059669">🟢 Đang mở — Nhấn chọn để điểm danh</span>
                 {% elif sess.status == 'completed' %}
-                  <span style="color:#6b7280">⏹ Đã kết thúc</span>
+                  <span style="color:var(--muted)">⏹ Đã kết thúc phiên</span>
                 {% else %}
-                  <span style="color:#f59e0b">⏳ Chờ giảng viên mở</span>
+                  <span style="color:#d97706">⏳ Đang chờ giảng viên mở phiên...</span>
                 {% endif %}
               </div>
             </div>
             <div class="sess-badge">
               {% if is_checked %}
-                <span class="badge badge-green" style="font-size:.7rem">✓ Có mặt</span>
+                <span class="badge badge-green">✓ Có mặt</span>
               {% elif sess.status == 'ongoing' %}
-                <span class="badge badge-blue" style="font-size:.7rem">Mở</span>
+                <span class="badge badge-blue">Mở</span>
               {% elif sess.status == 'completed' %}
-                <span class="badge" style="font-size:.7rem;background:#f1f5f9;color:#64748b">Xong</span>
+                <span class="badge badge-gray">Xong</span>
               {% else %}
-                <span class="badge" style="font-size:.7rem;background:#fef9c3;color:#713f12">Chờ</span>
+                <span class="badge badge-amber">Chờ</span>
               {% endif %}
             </div>
           </div>
         {% endfor %}
         </div>
       {% else %}
-        <div class="empty">
+        <div class="empty" style="padding:2rem 1rem">
           <div class="empty-icon">📭</div>
-          <div class="empty-text">Không có buổi học nào hôm nay</div>
+          <div class="empty-text">Hôm nay bạn không có buổi học nào cần điểm danh</div>
         </div>
       {% endif %}
 
-      <!-- Trạng thái polling -->
-      <div id="poll-status" style="font-size:.75rem;color:#9ca3af;margin-top:.75rem;text-align:right;display:none">
-        🔄 Đang theo dõi...
+      <div id="poll-status" style="font-size:.74rem;color:var(--muted);margin-top:.65rem;text-align:right;display:none">
+        🔄 Tự động cập nhật trạng thái mỗi 5 giây...
       </div>
 
-      <a href="{{ url_for('attendance.register_face_page') }}" class="btn btn-outline btn-sm" style="margin-top:1rem;width:100%;justify-content:center">
-        📷 Quản lý khuôn mặt
+      <a href="{{ url_for('attendance.register_face_page') }}" class="btn btn-outline btn-sm" style="margin-top:1rem;width:100%">
+        📷 Đăng ký / Cập nhật 5 góc khuôn mặt AI
       </a>
     </div>
 
-    <!-- Backend info -->
-    <div class="card" style="margin-top:1rem;padding:1rem">
-      <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.5rem">
-        <span style="color:#6b7280">AI Backend</span>
-        <span class="badge {% if backend_info.available %}badge-blue{% else %}badge-red{% endif %}">
-          {{ backend_info.backend or 'Chưa cài' }}
-        </span>
+    <!-- AI Engine & Trained Model Card -->
+    <div class="card" style="margin-top:1rem;padding:1.1rem 1.25rem">
+      <div style="font-family:var(--head);font-size:.84rem;font-weight:700;margin-bottom:.65rem;color:var(--text)">🧠 Thông số Model AI &amp; Anti-Spoofing</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.81rem;margin-bottom:.45rem">
+        <span style="color:var(--muted)">Mô hình nhận diện</span>
+        <span class="badge badge-blue">YuNet + SFace 128D</span>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:.82rem">
-        <span style="color:#6b7280">Ngưỡng nhận diện</span>
-        <strong>{{ '%.0f'|format(backend_info.threshold * 100) }}%</strong>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.81rem;margin-bottom:.45rem">
+        <span style="color:var(--muted)">Trạng thái Model (.pkl/.csv)</span>
+        {% if backend_info.model_trained %}
+          <span class="badge badge-green">✓ Đã train ({{ backend_info.trained_students }} SV)</span>
+        {% else %}
+          <span class="badge badge-amber">Sẵn sàng train khi ĐK</span>
+        {% endif %}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.81rem">
+        <span style="color:var(--muted)">Kiểm định người thật</span>
+        <strong style="color:#059669">Liveness ≥ {{ '%.0f'|format(backend_info.liveness_threshold * 100) }}%</strong>
       </div>
     </div>
   </div>
@@ -177,29 +266,23 @@ let selectedSession = null;
 let selectedClass   = null;
 let pollTimer       = null;
 
-// ── Khởi tạo ────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Tự động chọn buổi đầu tiên đang ongoing (nếu có)
   const firstOngoing = document.querySelector('.session-card.selected');
   if (firstOngoing) {
     selectedSession = parseInt(firstOngoing.dataset.session);
     selectedClass   = parseInt(firstOngoing.dataset.class);
   }
-
   startCamera();
   startPolling();
 });
 
-// ── Polling trạng thái buổi học ─────────────────────────────────
 function startPolling() {
   const cards = document.querySelectorAll('.session-card:not(.checked)');
-  if (!cards.length) return;  // Tất cả đã điểm danh, không cần poll
-
-  // Hiện indicator
+  if (!cards.length) return;
   const pollEl = document.getElementById('poll-status');
   if (pollEl) pollEl.style.display = 'block';
-
-  // Poll ngay lần đầu, sau đó mỗi 5 giây
   pollAllSessions();
   pollTimer = setInterval(pollAllSessions, 5000);
 }
@@ -214,8 +297,8 @@ async function pollAllSessions() {
   }
 
   for (const card of cards) {
-    const sessId  = card.dataset.session;
-    const classId = card.dataset.class;
+    const sessId    = card.dataset.session;
+    const classId   = card.dataset.class;
     const oldStatus = card.dataset.status;
 
     try {
@@ -224,37 +307,21 @@ async function pollAllSessions() {
       if (!data.ok) continue;
 
       const newStatus = data.status;
-
-      // Cập nhật nếu trạng thái thay đổi
       if (newStatus !== oldStatus) {
         card.dataset.status = newStatus;
         updateCardUI(card, newStatus, parseInt(sessId), parseInt(classId));
 
-        // Thông báo khi GV vừa mở
         if (newStatus === 'ongoing' && oldStatus === 'scheduled') {
-          const courseName = card.querySelector('[style*="font-weight:600"]')?.textContent?.trim() || 'Buổi học';
-          showToast(`🟢 ${courseName} — Giảng viên đã mở điểm danh!`);
-
-          // Tự động chọn nếu chưa chọn buổi nào
-          if (!selectedSession) {
-            selectSession(parseInt(sessId), parseInt(classId));
-          }
+          const courseName = card.querySelector('[style*="font-weight:700"]')?.textContent?.trim() || 'Buổi học';
+          showToast(`🟢 ${courseName} — Giảng viên vừa mở phiên điểm danh!`);
+          if (!selectedSession) selectSession(parseInt(sessId), parseInt(classId));
         }
-
-        // Dừng poll nếu completed
         if (newStatus === 'completed' && oldStatus === 'ongoing') {
-          showToast('⏹ Điểm danh đã đóng');
+          showToast('⏹ Phiên điểm danh đã đóng');
         }
       }
-
-      // Cập nhật nếu SV vừa điểm danh từ thiết bị khác
-      if (data.is_checked) {
-        markChecked(card, data.check_status);
-      }
-
-    } catch (e) {
-      // Bỏ qua lỗi mạng tạm thời
-    }
+      if (data.is_checked) markChecked(card, data.check_status);
+    } catch (e) {}
   }
 }
 
@@ -263,24 +330,18 @@ function updateCardUI(card, status, sessId, classId) {
   const badgeEl = card.querySelector('.sess-badge');
 
   if (status === 'ongoing') {
-    // Kích hoạt card
     card.classList.remove('disabled');
     card.classList.add('selected', 'just-opened');
     card.onclick = () => selectSession(sessId, classId);
     setTimeout(() => card.classList.remove('just-opened'), 2000);
-
-    if (labelEl) labelEl.innerHTML = '<span style="color:#16a34a">🟢 Đang mở điểm danh</span>';
-    if (badgeEl) badgeEl.innerHTML = '<span class="badge badge-blue" style="font-size:.7rem">Mở</span>';
-
+    if (labelEl) labelEl.innerHTML = '<span style="color:#059669">🟢 Đang mở — Nhấn chọn để điểm danh</span>';
+    if (badgeEl) badgeEl.innerHTML = '<span class="badge badge-blue">Mở</span>';
   } else if (status === 'completed') {
     card.classList.add('disabled');
     card.classList.remove('selected');
     card.onclick = null;
-
-    if (labelEl) labelEl.innerHTML = '<span style="color:#6b7280">⏹ Đã kết thúc</span>';
-    if (badgeEl) badgeEl.innerHTML = '<span class="badge" style="font-size:.7rem;background:#f1f5f9;color:#64748b">Xong</span>';
-
-    // Nếu đang chọn buổi này thì bỏ chọn
+    if (labelEl) labelEl.innerHTML = '<span style="color:var(--muted)">⏹ Đã kết thúc phiên</span>';
+    if (badgeEl) badgeEl.innerHTML = '<span class="badge badge-gray">Xong</span>';
     if (selectedSession === sessId) {
       selectedSession = null;
       selectedClass   = null;
@@ -292,15 +353,13 @@ function markChecked(card, checkStatus) {
   card.classList.add('checked');
   card.classList.remove('selected', 'disabled');
   card.onclick = null;
-
   const label = checkStatus === 'present' ? '✓ Có mặt' : checkStatus;
   const labelEl = card.querySelector('.sess-status-label');
   const badgeEl = card.querySelector('.sess-badge');
-  if (labelEl) labelEl.innerHTML = '<span style="color:#15803d">✓ Đã điểm danh</span>';
-  if (badgeEl) badgeEl.innerHTML = `<span class="badge badge-green" style="font-size:.7rem">${label}</span>`;
+  if (labelEl) labelEl.innerHTML = '<span style="color:#059669">✓ Đã điểm danh thành công</span>';
+  if (badgeEl) badgeEl.innerHTML = `<span class="badge badge-green">${label}</span>`;
 }
 
-// ── Chọn buổi học ───────────────────────────────────────────────
 function selectSession(sessId, classId) {
   document.querySelectorAll('.session-card:not(.checked):not(.disabled)').forEach(el => el.classList.remove('selected'));
   const card = document.getElementById('sess-' + sessId);
@@ -309,13 +368,11 @@ function selectSession(sessId, classId) {
   selectedClass   = classId;
 }
 
-// ── Kiểm tra buổi học đang ongoing ─────────────────────────────
 function isSessionOngoing(sessId) {
   const card = document.getElementById('sess-' + sessId);
   return card && card.dataset.status === 'ongoing';
 }
 
-// ── Camera ──────────────────────────────────────────────────────
 async function startCamera() {
   const video  = document.getElementById('video');
   const status = document.getElementById('cam-status');
@@ -326,49 +383,70 @@ async function startCamera() {
     });
     video.srcObject = stream;
     await video.play();
-    status.textContent = '✓ Camera sẵn sàng';
-    status.style.background = 'rgba(21,128,61,.8)';
+    status.textContent = '✓ Camera trực tiếp sẵn sàng nhận diện';
+    status.style.background = 'rgba(5, 150, 105, 0.88)';
   } catch(e) {
-    status.textContent = '✗ ' + e.message;
-    status.style.background = 'rgba(185,28,28,.8)';
+    status.textContent = '✗ Không thể mở camera: ' + e.message;
+    status.style.background = 'rgba(220, 38, 38, 0.88)';
   }
 }
 
-// ── Điểm danh ───────────────────────────────────────────────────
-async function doCheckin() {
+function captureOneFrame() {
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  return canvas.toDataURL('image/jpeg', 0.90);
+}
+
+async function doLiveCheckin() {
   if (!selectedSession || !selectedClass) {
-    showResult(false, 'Vui lòng chọn buổi học');
+    showResult(false, 'Vui lòng chọn một ca học đang mở ở cột bên phải.');
     return;
   }
   if (!isSessionOngoing(selectedSession)) {
-    showResult(false, 'Buổi học chưa mở điểm danh. Vui lòng chờ giảng viên.');
+    showResult(false, 'Ca học chưa mở điểm danh. Vui lòng đợi giảng viên mở phiên.');
     return;
   }
 
   const btn    = document.getElementById('checkin-btn');
-  const video  = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
+  const banner = document.getElementById('liveness-banner');
+  btn.disabled = true;
+  banner.style.display = 'block';
 
-  btn.disabled    = true;
-  btn.textContent = '⏳ Đang nhận diện...';
+  // Thu thập chuỗi 5 khung hình sống có thử thách nghiêng nhẹ đầu 3D để chống ảnh tĩnh / màn hình điện thoại!
+  const prompts = [
+    '1/5: Nhìn thẳng chính diện vào camera...',
+    '2/5: Hơi nghiêng nhẹ đầu sang TRÁI...',
+    '3/5: Hơi nghiêng nhẹ đầu sang PHẢI...',
+    '4/5: Nhìn thẳng lại chính diện...',
+    '5/5: Giữ nguyên để đối chiếu Model AI...',
+  ];
+  const frames = [];
+  for (let i = 0; i < prompts.length; i++) {
+    banner.textContent = prompts[i];
+    btn.textContent = `⏳ Đang quét người thật (${i + 1}/5)...`;
+    await sleep(420);
+    frames.push(captureOneFrame());
+  }
 
-  canvas.width  = video.videoWidth  || 640;
-  canvas.height = video.videoHeight || 480;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const imageData = canvas.toDataURL('image/jpeg', 0.92);
+  banner.textContent = '🧠 Đang phân tích chống giả mạo & so khớp Model AI...';
 
   try {
     const res = await fetch('{{ url_for("attendance.checkin_submit") }}', {
       method:  'POST',
       headers: {'Content-Type': 'application/json'},
       body:    JSON.stringify({
-        image:      imageData,
-        session_id: selectedSession,
-        class_id:   selectedClass,
+        frames:         frames,
+        challenge_mode: 'head_turn',
+        session_id:     selectedSession,
+        class_id:       selectedClass,
       })
     });
     const data = await res.json();
-    showResult(data.ok, data.msg, data.score);
+    banner.style.display = 'none';
+    showResult(data.ok, data.msg, data.score, data.liveness);
 
     if (data.ok) {
       const card = document.getElementById('sess-' + selectedSession);
@@ -377,35 +455,40 @@ async function doCheckin() {
       selectedClass   = null;
     }
   } catch(e) {
-    showResult(false, 'Lỗi kết nối server');
+    banner.style.display = 'none';
+    showResult(false, 'Lỗi kết nối máy chủ khi xác thực điểm danh.');
   }
 
   btn.disabled    = false;
-  btn.textContent = '🤖 Điểm danh ngay';
+  btn.textContent = '🤖 Quét người thật & Xác nhận Điểm danh AI';
 }
 
-// ── Hiển thị kết quả ────────────────────────────────────────────
-function showResult(ok, msg, score) {
+function showResult(ok, msg, score, liveness) {
   const box  = document.getElementById('result-box');
   const wrap = document.getElementById('score-wrap');
   box.style.display = 'block';
   box.className     = 'result-box ' + (ok ? 'result-ok' : 'result-err');
   box.textContent   = (ok ? '✅ ' : '❌ ') + msg;
 
-  if (score !== undefined && score !== null) {
+  if ((score !== undefined && score !== null) || (liveness !== undefined && liveness !== null)) {
     wrap.style.display = 'block';
-    const pct = Math.round(score * 100);
-    document.getElementById('score-text').textContent  = pct + '%';
-    document.getElementById('score-fill').style.width  = pct + '%';
+    const pct = Math.round((score || 0) * 100);
+    const livePct = Math.round((liveness || 0) * 100);
+    document.getElementById('score-text').textContent = pct + '%';
+    document.getElementById('score-fill').style.width = pct + '%';
     document.getElementById('score-fill').style.background =
-      pct >= 80 ? 'linear-gradient(90deg,#22c55e,#16a34a)' :
-      pct >= 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' :
+      pct >= 78 ? 'linear-gradient(90deg,#10b981,#059669)' :
+      pct >= 55 ? 'linear-gradient(90deg,#f59e0b,#d97706)' :
                   'linear-gradient(90deg,#ef4444,#dc2626)';
+
+    document.getElementById('live-text').textContent = livePct + '%';
+    document.getElementById('live-fill').style.width = livePct + '%';
+    document.getElementById('live-fill').style.background =
+      livePct >= 58 ? 'linear-gradient(90deg,#2563eb,#4f46e5)' :
+                      'linear-gradient(90deg,#ef4444,#dc2626)';
   }
-  setTimeout(() => { box.style.display = 'none'; }, 5000);
 }
 
-// ── Toast thông báo ─────────────────────────────────────────────
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;

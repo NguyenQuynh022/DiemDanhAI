@@ -21,5 +21,13 @@ class Attendance(db.Model):
         db.UniqueConstraint('student_id', 'class_id', 'session_date', name='uq_attendance'),
     )
 
-    student   = db.relationship('User',  foreign_keys=[student_id], backref='attendance_records')
-    class_ref = db.relationship('Class', foreign_keys=[class_id],   backref='attendance_records')
+    student   = db.relationship(
+        'User',
+        foreign_keys=[student_id],
+        backref=db.backref('attendance_records', cascade='all, delete-orphan', passive_deletes=True),
+    )
+    class_ref = db.relationship(
+        'Class',
+        foreign_keys=[class_id],
+        backref=db.backref('attendance_records', cascade='all, delete-orphan', passive_deletes=True),
+    )

@@ -1,0 +1,421 @@
+{% extends "admin/layout.html" %}
+{% block title %}Quản lý & Cấp tài khoản — Admin{% endblock %}
+{% block page_title %}👥 Quản lý &amp; Cấp phát Tài khoản / Mã Sinh viên{% endblock %}
+
+{% block extra_style %}
+.role-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.role-pill {
+  padding: 0.45rem 0.95rem; border-radius: 99px; font-size: 0.83rem; font-weight: 600;
+  border: 1px solid var(--border-strong); background: #fff; color: var(--text-secondary);
+  text-decoration: none; transition: all 0.15s;
+}
+.role-pill:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-text); }
+.role-pill.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border-color: transparent;
+}
+
+.mssv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--head);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  letter-spacing: 0.03em;
+}
+.cohort-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.14rem 0.48rem;
+  border-radius: 99px;
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Edit Modal */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55);
+  backdrop-filter: blur(3px); z-index: 500; place-items: center; padding: 1rem;
+}
+.modal-backdrop.open { display: grid; }
+.modal-card {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 600px;
+  padding: 1.65rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+{% endblock %}
+
+{% block content %}
+
+<!-- Provision New Account Card -->
+<div class="card" id="create-account" style="margin-bottom:1.5rem;background:linear-gradient(135deg,#ffffff,#fff1f250)">
+  <div class="card-title">
+    ➕ Cấp tài khoản &amp; Mã số sinh viên theo Khóa
+    <span style="margin-left:auto;font-size:.78rem;font-weight:600;color:var(--muted)">
+      Quy chuẩn MSSV: <strong style="color:var(--accent-text)">[2 số Khóa][Mã ngành IN HOA][Số TT]</strong> · Tối đa 8 ký tự (VD: <code>23ITB185</code>)
+    </span>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin.create_user') }}">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.95rem">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Loại tài khoản ✱</label>
+        <select name="role" id="new-role" class="form-control" onchange="toggleStudentFields(this.value)" required>
+          <option value="student" {% if role_filter != 'lecturer' %}selected{% endif %}>🎓 Sinh viên</option>
+          <option value="lecturer" {% if role_filter == 'lecturer' %}selected{% endif %}>👨‍🏫 Giảng viên</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Họ và tên ✱</label>
+        <input type="text" name="full_name" id="new-fullname" class="form-control" placeholder="VD: Nguyễn Văn Minh" oninput="suggestUsername()" required>
+      </div>
+
+      <!-- Khóa tuyển sinh (chỉ hiện với Sinh viên) -->
+      <div class="form-group" style="margin:0" id="cohort-wrap">
+        <label class="form-label">Khóa tuyển sinh ✱</label>
+        <select name="cohort" id="new-cohort" class="form-control" onchange="fetchNextMssv()">
+          {% for c in cohort_options %}
+          <option value="{{ c }}" {% if c == default_cohort %}selected{% endif %}>Khóa {{ c }} (Đầu mã {{ c }}...)</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Mã ngành (chỉ hiện với Sinh viên) -->
+      <div class="form-group" style="margin:0" id="major-wrap">
+        <label class="form-label">Mã ngành đào tạo ✱</label>
+        <select name="major" id="new-major" class="form-control" onchange="fetchNextMssv()">
+          {% for code, label in major_options %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- MSSV chuẩn <= 8 ký tự -->
+      <div class="form-group" style="margin:0" id="mssv-wrap">
+        <label class="form-label">Mã sinh viên cấp phát ✱ (≤ 8 ký tự)</label>
+        <div style="display:flex;gap:.35rem">
+          <input type="text" name="student_code" id="new-mssv" maxlength="8"
+                 value="{{ suggested_mssv }}"
+                 class="form-control"
+                 style="text-transform:uppercase;font-family:var(--head);font-weight:700;letter-spacing:.04em"
+                 oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                 placeholder="VD: 23ITB185">
+          <button type="button" class="btn btn-outline btn-sm" onclick="fetchNextMssv()" title="Tự sinh mã tiếp theo theo Khóa & Ngành">⚡ Tự cấp</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tên đăng nhập ✱</label>
+        <input type="text" name="username" id="new-username" class="form-control" placeholder="VD: nguyen.van.minh" required>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Mật khẩu ban đầu ✱ (≥ 6 ký tự)</label>
+        <div style="display:flex;gap:.35rem">
+          <input type="text" name="password" id="new-password" class="form-control" value="sv123456" required>
+          <button type="button" class="btn btn-outline btn-sm" onclick="genPass()" title="Tạo mật khẩu ngẫu nhiên">🎲</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Email công vụ / cá nhân</label>
+        <input type="email" name="email" class="form-control" placeholder="VD: minhnv.23itb@vku.udn.vn">
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Số điện thoại</label>
+        <input type="text" name="phone" class="form-control" placeholder="VD: 0905123456">
+      </div>
+
+      <div class="form-group" style="margin:0;display:none" id="bio-wrap">
+        <label class="form-label">Chuyên môn / Học vị (Giảng viên)</label>
+        <input type="text" name="bio" class="form-control" placeholder="VD: ThS Khoa học Máy tính">
+      </div>
+    </div>
+
+    <div style="margin-top:1.15rem;display:flex;justify-content:flex-end">
+      <button type="submit" class="btn btn-primary">✅ Cấp phát tài khoản ngay</button>
+    </div>
+  </form>
+</div>
+
+<!-- Filter & Search Bar -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.15rem">
+    <div class="role-pills">
+      <a href="{{ url_for('admin.users_list') }}" class="role-pill {% if not role_filter and not status_filter and not cohort_filter %}active{% endif %}">
+        Tất cả ({{ counts.all }})
+      </a>
+      <a href="{{ url_for('admin.users_list', role='lecturer') }}" class="role-pill {% if role_filter == 'lecturer' %}active{% endif %}">
+        👨‍🏫 Giảng viên ({{ counts.lecturer }})
+      </a>
+      <a href="{{ url_for('admin.users_list', role='student') }}" class="role-pill {% if role_filter == 'student' and not cohort_filter %}active{% endif %}">
+        🎓 Sinh viên ({{ counts.student }})
+      </a>
+      <a href="{{ url_for('admin.users_list', status='suspended') }}" class="role-pill {% if status_filter == 'suspended' %}active{% endif %}">
+        🔒 Đang khóa ({{ counts.locked }})
+      </a>
+    </div>
+
+    <form method="GET" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      {% if role_filter %}<input type="hidden" name="role" value="{{ role_filter }}">{% endif %}
+      <select name="cohort" class="form-control" style="width:auto;padding:.48rem .75rem;font-size:.84rem" onchange="this.form.submit()">
+        <option value="">Lọc theo Khóa SV</option>
+        {% for c in cohort_options %}
+          <option value="{{ c }}" {% if cohort_filter == c %}selected{% endif %}>Khóa {{ c }} ({{ c }}...)</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="q" value="{{ q }}" class="form-control" style="width:240px;padding:.48rem .85rem;font-size:.85rem" placeholder="Tìm họ tên, MSSV (23ITB...), username...">
+      <button type="submit" class="btn btn-outline btn-sm">🔍 Tìm</button>
+      {% if q or status_filter or cohort_filter %}
+        <a href="{{ url_for('admin.users_list', role=role_filter) }}" class="btn btn-outline btn-sm">✕</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Users Table -->
+  {% if users %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Họ và tên</th>
+          <th>Mã SV &amp; Khóa</th>
+          <th>Tên đăng nhập</th>
+          <th>Vai trò</th>
+          <th>Liên hệ</th>
+          <th>Trạng thái</th>
+          <th style="text-align:right">Quản lý</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:.65rem">
+              <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-weight:700;font-size:.82rem;flex-shrink:0">
+                {{ u.full_name[0].upper() if u.full_name else 'U' }}
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--text)">{{ u.full_name }}</div>
+                <div style="font-size:.73rem;color:var(--muted)">Tạo: {{ u.created_at.strftime('%d/%m/%Y') if u.created_at else '—' }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if u.role == 'student' and u.student_code %}
+              <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+                <span class="mssv-badge">{{ u.student_code }}</span>
+                {% if u.cohort %}
+                  <span class="cohort-tag">Khóa {{ u.cohort }}</span>
+                {% endif %}
+              </div>
+            {% else %}
+              <span style="color:var(--muted-light)">—</span>
+            {% endif %}
+          </td>
+          <td><code style="background:var(--surface2);padding:.2rem .5rem;border-radius:6px;font-weight:600;color:var(--text)">{{ u.username }}</code></td>
+          <td>
+            {% if u.role == 'admin' %}
+              <span class="badge badge-red">🛡️ Admin</span>
+            {% elif u.role == 'lecturer' %}
+              <span class="badge badge-purple">👨‍🏫 Giảng viên</span>
+            {% else %}
+              <span class="badge badge-blue">🎓 Sinh viên</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="font-size:.8rem;color:var(--text-secondary)">{{ u.email or '—' }}</div>
+            {% if u.phone %}<div style="font-size:.74rem;color:var(--muted)">📞 {{ u.phone }}</div>{% endif %}
+          </td>
+          <td>
+            {% if u.status == 'active' %}
+              <span class="badge badge-green">● Hoạt động</span>
+            {% else %}
+              <span class="badge badge-red">🔒 Đã khóa</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right">
+            <div style="display:flex;gap:.4rem;justify-content:flex-end;flex-wrap:wrap">
+              <button type="button" class="btn btn-outline btn-sm"
+                      onclick='openEditModal({{ u.id }}, {{ u.full_name|tojson }}, {{ u.username|tojson }}, {{ u.role|tojson }}, {{ (u.email or "")|tojson }}, {{ (u.phone or "")|tojson }}, {{ (u.student_code or "")|tojson }}, {{ (u.cohort or "23")|tojson }}, {{ (u.bio or "")|tojson }})'>
+                ✏️ Sửa / Cấp lại MK
+              </button>
+
+              {% if u.role != 'admin' %}
+                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" style="display:inline">
+                  <button type="submit" class="btn {% if u.status == 'active' %}btn-outline{% else %}btn-success{% endif %} btn-sm">
+                    {% if u.status == 'active' %}🔒 Khóa{% else %}🔓 Mở{% endif %}
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" style="display:inline"
+                      onsubmit="return eduConfirmForm(event, this, 'Xác nhận xóa vĩnh viễn tài khoản {{ u.full_name }} ({{ u.username }})?', 'Xóa tài khoản', 'Xóa vĩnh viễn')">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Xóa tài khoản">🗑</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Không tìm thấy tài khoản nào phù hợp</div></div>
+  {% endif %}
+</div>
+
+<!-- Modal Sửa thông tin & Mã SV theo khóa -->
+<div class="modal-backdrop" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.15rem">
+      <h3 style="font-family:var(--head);font-size:1.08rem">✏️ Cập nhật Tài khoản &amp; Mã Sinh viên</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeEditModal()">✕</button>
+    </div>
+
+    <form method="POST" id="edit-form">
+      <div class="grid-2col">
+        <div class="form-group">
+          <label class="form-label">Tên đăng nhập</label>
+          <input type="text" id="ed-username" class="form-control" disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Họ và tên</label>
+          <input type="text" name="full_name" id="ed-fullname" class="form-control" required>
+        </div>
+
+        <div class="form-group" id="ed-cohort-wrap">
+          <label class="form-label">Khóa tuyển sinh</label>
+          <select name="cohort" id="ed-cohort" class="form-control" onchange="syncEditCohortPrefix()">
+            {% for c in cohort_options %}
+            <option value="{{ c }}">Khóa {{ c }} (Đầu mã {{ c }}...)</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" id="ed-mssv-wrap">
+          <label class="form-label">Mã số SV (CHỮ HOA + SỐ, ≤ 8 ký tự)</label>
+          <input type="text" name="student_code" id="ed-mssv" maxlength="8"
+                 class="form-control"
+                 style="text-transform:uppercase;font-family:var(--head);font-weight:700;letter-spacing:.04em"
+                 oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" id="ed-email" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số điện thoại</label>
+          <input type="text" name="phone" id="ed-phone" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">🔑 Đặt lại mật khẩu mới (Để trống nếu giữ nguyên)</label>
+        <input type="text" name="new_password" id="ed-pw" class="form-control" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+      </div>
+
+      <div class="form-group" id="ed-bio-wrap" style="display:none">
+        <label class="form-label">Giới thiệu chuyên môn (Giảng viên)</label>
+        <textarea name="bio" id="ed-bio" rows="2" class="form-control"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:.55rem;margin-top:.5rem">
+        <button type="button" class="btn btn-outline" onclick="closeEditModal()">Hủy</button>
+        <button type="submit" class="btn btn-primary">💾 Lưu cập nhật</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+function vnSlug(str) {
+  return str.replace(/đ/g, 'd').replace(/Đ/g, 'd')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim().replace(/\s+/g, '.');
+}
+
+async function fetchNextMssv() {
+  const role = document.getElementById('new-role').value;
+  if (role !== 'student') return;
+  const cohort = document.getElementById('new-cohort').value;
+  const major  = document.getElementById('new-major').value;
+  try {
+    const res  = await fetch(`/admin/api/next-student-code?cohort=${encodeURIComponent(cohort)}&major=${encodeURIComponent(major)}`);
+    const data = await res.json();
+    if (data.ok && data.student_code) {
+      document.getElementById('new-mssv').value = data.student_code;
+    }
+  } catch (e) {}
+}
+
+function toggleStudentFields(role) {
+  const isSv = role === 'student';
+  document.getElementById('cohort-wrap').style.display = isSv ? 'block' : 'none';
+  document.getElementById('major-wrap').style.display  = isSv ? 'block' : 'none';
+  document.getElementById('mssv-wrap').style.display   = isSv ? 'block' : 'none';
+  document.getElementById('bio-wrap').style.display    = isSv ? 'none'  : 'block';
+
+  const pwInput = document.getElementById('new-password');
+  if (isSv && pwInput.value === 'gv123456') pwInput.value = 'sv123456';
+  if (!isSv && pwInput.value === 'sv123456') pwInput.value = 'gv123456';
+  suggestUsername();
+}
+
+function suggestUsername() {
+  const name = document.getElementById('new-fullname').value;
+  const role = document.getElementById('new-role').value;
+  const uInp = document.getElementById('new-username');
+  if (!name.trim()) return;
+  const slug = vnSlug(name);
+  uInp.value = role === 'lecturer' ? 'gv_' + slug.replace(/\./g, '') : slug;
+}
+
+function genPass() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('new-password').value = out;
+}
+
+toggleStudentFields(document.getElementById('new-role').value);
+
+function openEditModal(id, fullName, username, role, email, phone, mssv, cohort, bio) {
+  document.getElementById('edit-form').action = `/admin/users/${id}/update?role={{ role_filter }}`;
+  document.getElementById('ed-username').value = username;
+  document.getElementById('ed-fullname').value = fullName;
+  document.getElementById('ed-email').value = email;
+  document.getElementById('ed-phone').value = phone;
+  document.getElementById('ed-mssv').value = mssv;
+  document.getElementById('ed-cohort').value = cohort || '23';
+  document.getElementById('ed-bio').value = bio;
+  document.getElementById('ed-pw').value = '';
+
+  const isSv = role === 'student';
+  document.getElementById('ed-cohort-wrap').style.display = isSv ? 'block' : 'none';
+  document.getElementById('ed-mssv-wrap').style.display   = isSv ? 'block' : 'none';
+  document.getElementById('ed-bio-wrap').style.display    = role === 'lecturer' ? 'block' : 'none';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function syncEditCohortPrefix() {
+  const c   = document.getElementById('ed-cohort').value;
+  const inp = document.getElementById('ed-mssv');
+  if (inp.value.length >= 2 && /^\d{2}/.test(inp.value)) {
+    inp.value = c + inp.value.slice(2);
+  }
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+{% endblock %}
